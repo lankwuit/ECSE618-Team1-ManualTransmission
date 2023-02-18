@@ -83,10 +83,10 @@ public class GearShifter{
         stroke(0);
 
         // top half
-        for (int i = 0; i < topCoords.length; i += 2) { // draw the curve
+        for (int i = 0; i < topCoords.length; i += 2) { // draw the curve that is the slots
 
             if(i > 0 && abs(topCoords[i] - topCoords[i-2]) < 0.001){
-                line(this.w * topCoords[i-2], this.h * topCoords[i - 1], this.w * topCoords[i], this.h * topCoords[i + 1]);
+                line(this.w * topCoords[i-2], this.h * topCoords[i - 1], this.w * topCoords[i], this.h * topCoords[i + 1]); // vertical lines inside
             }
             else if(i > 2 && (topCoords[i+1] - topCoords[i+1-2]) > 0 && abs(topCoords[i+1] - topCoords[i+1-2 -2]) < 0.00001 ){ // top arcs
                 ellipseMode(RADIUS);
@@ -102,7 +102,7 @@ public class GearShifter{
         for (int i = bottomCoords.length - 4; i >= 0; i -= 2) { // draw the curve
 
             if(abs(bottomCoords[i] - bottomCoords[i+2]) < 0.001){ // compare this and previous one
-                line(this.w * bottomCoords[i+2], this.h * bottomCoords[i + 1 + 2], this.w * bottomCoords[i], this.h * bottomCoords[i + 1]);
+                line(this.w * bottomCoords[i+2], this.h * bottomCoords[i + 1 + 2], this.w * bottomCoords[i], this.h * bottomCoords[i + 1]); // verical line that is inside
             }
             else if(i < bottomCoords.length - 4 && (bottomCoords[i+1] - bottomCoords[i+1+2]) > 0 && abs(bottomCoords[i+1] - bottomCoords[i+1 + 2 + 2]) < 0.00001 ){ // top arcs
                 ellipseMode(RADIUS);
@@ -121,12 +121,12 @@ public class GearShifter{
 
 
 
-        FLine leftLine = new FLine(this.scale * this.w * topCoords[0], this.scale * this.h * topCoords[1], this.scale * this.w * bottomCoords[0], this.scale * this.h * bottomCoords[1]);
-        FLine rightLine = new FLine(this.scale * this.w * topCoords[topCoords.length - 2], this.scale * this.h * topCoords[topCoords.length - 1],
-        this.scale * this.w * bottomCoords[bottomCoords.length - 2], this.scale * this.h * bottomCoords[bottomCoords.length - 1]);
+        // FLine leftLine = new FLine(this.scale * this.w * topCoords[0], this.scale * this.h * topCoords[1], this.scale * this.w * bottomCoords[0], this.scale * this.h * bottomCoords[1]);
+        // FLine rightLine = new FLine(this.scale * this.w * topCoords[topCoords.length - 2], this.scale * this.h * topCoords[topCoords.length - 1],
+        // this.scale * this.w * bottomCoords[bottomCoords.length - 2], this.scale * this.h * bottomCoords[bottomCoords.length - 1]);
 
-        this.world.add(leftLine);
-        this.world.add(rightLine);
+        // this.world.add(leftLine);
+        // this.world.add(rightLine);
 
         fill(255, 0, 0);
         noStroke();

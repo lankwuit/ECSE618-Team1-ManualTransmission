@@ -71,15 +71,6 @@ FCircle           h1; // grab radius
 /* define gear mechanisim */
 GearShifter mechanisim;
 
-
-
-/* region information */
-int region = -1;
-
-/* angle for region 2 */
-float theta = 0;
-float radius = 1.0;
-
 /* end elements definition *********************************************************************************************/  
 
 
@@ -129,7 +120,6 @@ void setup(){
   mechanisim = new GearShifter(1000, 400, world, pixelsPerCentimeter);
   
   
-  
 
   
   /* Haptic Tool Initialization */
@@ -169,6 +159,7 @@ void setup(){
 void draw(){
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
   background(255);
+  mechanisim.draw();
   world.draw();  
 }
 /* end draw section ****************************************************************************************************/
