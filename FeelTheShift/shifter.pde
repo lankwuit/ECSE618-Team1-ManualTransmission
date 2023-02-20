@@ -1,6 +1,27 @@
-
-
-
+/*
+ *                        _oo0oo_
+ *                       o8888888o
+ *                       88" . "88
+ *                       (| -_- |)
+ *                       0\  =  /0
+ *                     ___/`---'\___
+ *                   .' \\|     |// '.
+ *                  / \\|||  :  |||// \
+ *                 / _||||| -:- |||||- \
+ *                |   | \\\  - /// |   |
+ *                | \_|  ''\---/''  |_/ |
+ *                \  .-\__  '-'  ___/-. /
+ *              ___'. .'  /--.--\  `. .'___
+ *           ."" '<  `.___\_<|>_/___.' >' "".
+ *          | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+ *          \  \ `_.   \_ __\ /__ _/   .-` /  /
+ *      =====`-.____`.___ \_____/___.-`___.-'=====
+ *                        `=---='
+ * 
+ * 
+ *      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *      NO BUG PLS
+ */
 
 // class the creates and displays the gear shifting mechanisim
 public class GearShifter{
@@ -18,8 +39,11 @@ public class GearShifter{
     float ybb = 1 - yb;
 
     float scale = 1.0;
-    FWorld world;
     FLine myLine;
+
+    //  this is the endeffector part
+    PShape endEffector;
+    float rEE = 2;
 
 
 
@@ -69,15 +93,14 @@ public class GearShifter{
     };
 
     // constructor
-    public GearShifter(int w, int h, FWorld world, float pixelsPerCm){
+    public GearShifter(int w, int h, float pixelsPerCm){
         this.w = w - 1;
         this.h = h - 1;
 
-        this.world = world;
-        this.scale = 1.0/pixelsPerCm;
+        this.scale = pixelsPerCm;
     }
 
-
+  
     public void draw(){
         noFill();
         stroke(0);
@@ -112,6 +135,7 @@ public class GearShifter{
                 ellipseMode(RADIUS);
                 arc(this.w * bottomCoords[i + 2], this.h * bottomCoords[i + 1 + 2 + 2], 0.5*slotA_W*this.w, (ya - yb)*this.h, 2*PI, 3*PI);
             }
+            
         }
 
 
@@ -139,6 +163,39 @@ public class GearShifter{
         for (int i = bottomCoords.length - 2; i >= 0; i -= 2) { // // show the coordinate points chosen in green
             ellipse(this.w * bottomCoords[i], this.h * bottomCoords[i + 1], 3, 3);
         }
+        
+    }
+
+    /**
+     * @description: Draw function specifally for the end_effector
+     * @return {*}
+     */    
+    public void draw_ee(float xE, float yE){
+        xE = scale * xE;
+        yE = scale * yE;
+        translate(xE,yE);
+        shape(this.endEffector);
+    }
+    
+
+    /**
+     * @description: create the shape of the end-effector
+     *
+     * @return 
+     */
+    public void create_ee(){
+        // creating the end effector at middle - top of the canvas initially
+        this.endEffector = createShape(ELLIPSE, w/2, 0.0, rEE*scale, rEE*scale);
+        this.endEffector.setStroke(color(0));
+        this.endEffector.setStrokeWeight(5);
+        this.endEffector.setFill(color(255,0,0));
+    }   
+
+    public void forcerender(PVector pos_ee){
+        // Start definition of wall, look into vertical walls only first
+        // sarting from the left most wall
+        // if(pos_ee.y < )
+
     }
 
 }

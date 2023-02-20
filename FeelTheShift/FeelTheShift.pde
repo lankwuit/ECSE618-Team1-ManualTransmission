@@ -21,6 +21,7 @@ byte              widgetOneID                         = 5;
 int               CW                                  = 0;
 int               CCW                                 = 1;
 boolean           rendering_force                     = false;
+float             radsPerDegree                       = 0.01745;
 /* end device block definition *****************************************************************************************/
 
 
@@ -64,9 +65,7 @@ float             edgeBottomRightY                    = worldHeight;
 boolean           jointCreated                        = false;
 FDistanceJoint    d1;
 
-/* Initialization of virtual tool */
-HVirtualCoupling  s;
-FCircle           h1; // grab radius
+
 
 /* define gear mechanisim */
 GearShifter mechanisim;
@@ -111,36 +110,17 @@ void setup(){
   
   //widgetOne.device_set_parameters();
   
-  
-  /* 2D physics scaling and world creation */
-  hAPI_Fisica.init(this); 
-  hAPI_Fisica.setScale(pixelsPerCentimeter); 
-  world               = new FWorld();
 
-  mechanisim = new GearShifter(1000, 400, world, pixelsPerCentimeter);
+  // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
+  mechanisim = new GearShifter(1000, 400, pixelsPerCentimeter);
   
   
 
   
   /* Haptic Tool Initialization */
-  s                   = new HVirtualCoupling((2.0)); 
-  s.h_avatar.setDensity(10);
-  s.h_avatar.setStroke(0); 
-  s.h_avatar.setFill(0); 
-  //s.h_avatar.setSensor(true);
-  s.init(world, edgeTopLeftX+worldWidth/2, edgeTopLeftY+worldHeight/2);
   
-  
-  
-  /* world conditions setup */ 
-  world.setGravity((0.0), (300.0)); //1000 cm/(s^2)
-  //world.setEdges((edgeTopLeftX), (edgeTopLeftY), (edgeBottomRightX), (edgeBottomRightY)); 
-  world.setEdgesRestitution(.4);
-  world.setEdgesFriction(0.5);
-  
-  world.draw();
-
   mechanisim.draw();
+  mechanisim.create_ee();
   
   
   /* setup framerate speed */
@@ -160,7 +140,7 @@ void draw(){
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
   background(255);
   mechanisim.draw();
-  world.draw();  
+  mechanisim.draw_ee(pos_ee.x, pos_ee.y);
 }
 /* end draw section ****************************************************************************************************/
 
@@ -182,22 +162,19 @@ class SimulationThread implements Runnable{
     
       angles.set(widgetOne.get_device_angles()); 
       pos_ee.set(widgetOne.get_device_position(angles.array()));
-      pos_ee.set(pos_ee.copy().mult(200));  
+      pos_ee.set(device_to_graphics(pos_ee));  
     }
     
-
+    println(pos_ee);
 
     
-    s.setToolPosition(edgeTopLeftX+worldWidth/2-(pos_ee).x+2, edgeTopLeftY+(pos_ee).y-7); 
-    s.updateCouplingForce();
-    f_ee.set(-s.getVCforceX(), s.getVCforceY());
+    //s.setToolPosition(edgeTopLeftX+worldWidth/2-(pos_ee).x+2, edgeTopLeftY+(pos_ee).y-7); 
+    //s.updateCouplingForce();
+    //f_ee.set(-s.getVCforceX(), s.getVCforceY());
  
     f_ee.div(20000); //
     torques.set(widgetOne.set_device_torques(f_ee.array()));
     widgetOne.device_write_torques();
- 
-  
-    world.step(1.0f/1000.0f);
   
     rendering_force = false;
   }
@@ -205,8 +182,13 @@ class SimulationThread implements Runnable{
 /* end simulation section **********************************************************************************************/
 
 
+PVector device_to_graphics(PVector deviceFrame){
+  return deviceFrame.set(-deviceFrame.x, deviceFrame.y);
+}
+
+
+PVector graphics_to_device(PVector graphicsFrame){
+  return graphicsFrame.set(-graphicsFrame.x, graphicsFrame.y);
+}
 
 /* end helper functions section ****************************************************************************************/
-
-
-
