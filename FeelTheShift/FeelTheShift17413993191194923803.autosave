@@ -1,4 +1,4 @@
-/* library imports *****************************************************************************************************/ 
+  /* library imports *****************************************************************************************************/ 
 import processing.serial.*;
 import static java.util.concurrent.TimeUnit.*;
 import java.util.concurrent.*;
@@ -137,6 +137,7 @@ void draw(){
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
   background(255);
   mechanisim.draw();
+  println(pos_ee);
   mechanisim.draw_ee(pos_ee.x, pos_ee.y);
 }
 /* end draw section ****************************************************************************************************/

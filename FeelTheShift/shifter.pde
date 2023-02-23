@@ -38,7 +38,7 @@ public class GearShifter{
     float yaa = 1 - ya;
     float ybb = 1 - yb;
 
-    float scale = 1.0;
+    float scale;
     FLine myLine;
 
     //  this is the endeffector part
@@ -171,8 +171,8 @@ public class GearShifter{
      * @return {*}
      */    
     public void draw_ee(float xE, float yE){
-        xE = scale * xE;
-        yE = scale * yE;
+        xE = scale * xE *100;
+        yE = scale * yE *100; // for conversion betewwen centimeter scale to meter scale
         translate(xE,yE);
         shape(this.endEffector);
     }
@@ -185,7 +185,9 @@ public class GearShifter{
      */
     public void create_ee(){
         // creating the end effector at middle - top of the canvas initially
-        this.endEffector = createShape(ELLIPSE, w/2, 0.0, rEE*scale, rEE*scale);
+        // initial x position is refferred to the coordinate of H
+        this.endEffector = createShape(ELLIPSE, (xa + slotA_W/2+ (slotA_W + slotE_W2*1.5))*scale*2+w/2, -50.0, rEE*scale, rEE*scale);
+        println(xa + slotA_W/2+ (slotA_W + slotE_W2*1.5));
         this.endEffector.setStroke(color(0));
         this.endEffector.setStrokeWeight(5);
         this.endEffector.setFill(color(255,0,0));
@@ -195,6 +197,14 @@ public class GearShifter{
         // Start definition of wall, look into vertical walls only first
         // sarting from the left most wall
         // if(pos_ee.y < )
+    }
+
+    /**
+     * @description:  For the first step of the funtion, bringing the end-effector to the center of the workspace
+     * @return {*}
+     */
+    public void resetdevice(){
+
 
     }
 
