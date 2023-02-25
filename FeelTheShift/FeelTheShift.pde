@@ -71,6 +71,12 @@ FCircle           h1; // grab radius
 /* define gear mechanisim */
 GearShifter mechanisim;
 
+/* define sensors */
+Meter rpm_sensor, speed_sensor;
+int rpm_value = 0;
+int current_time = 0;
+int last_time = 0;
+
 /* end elements definition *********************************************************************************************/  
 
 
@@ -117,7 +123,10 @@ void setup(){
   hAPI_Fisica.setScale(pixelsPerCentimeter); 
   world               = new FWorld();
 
-  mechanisim = new GearShifter(1000, 400, world, pixelsPerCentimeter);
+  mechanisim = new GearShifter(1000, 400);
+
+  rpm_sensor = new Meter(150,150, 200, 100, 10);
+  speed_sensor = new Meter(850,150, 200, 100, 10);
   
   
 
@@ -139,9 +148,6 @@ void setup(){
   //world.setEdgesFriction(0.5);
   
   //world.draw();
-
-  mechanisim.draw();
-  
   
   /* setup framerate speed */
   frameRate(baseFrameRate);
@@ -150,6 +156,7 @@ void setup(){
   /* setup simulation thread to run at 1kHz */ 
   //SimulationThread st = new SimulationThread();
   //scheduler.scheduleAtFixedRate(st, 1, 1, MILLISECONDS);
+  last_time = millis();
 }
 /* end setup section ***************************************************************************************************/
 
@@ -160,6 +167,15 @@ void draw(){
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
   background(255);
   mechanisim.draw();
+  rpm_sensor.draw();
+  speed_sensor.draw();
+
+  current_time = millis();
+  if(current_time - last_time > 1000){
+    last_time = current_time;
+    rpm_sensor.setValue(str(rpm_value++));
+    speed_sensor.setValue(str(rpm_value*10));
+  }
 }
 /* end draw section ****************************************************************************************************/
 
