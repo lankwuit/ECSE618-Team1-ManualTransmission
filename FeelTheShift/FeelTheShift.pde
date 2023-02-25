@@ -133,12 +133,12 @@ void setup(){
   
   
   /* world conditions setup */ 
-  world.setGravity((0.0), (300.0)); //1000 cm/(s^2)
+  //world.setGravity((0.0), (300.0)); //1000 cm/(s^2)
   //world.setEdges((edgeTopLeftX), (edgeTopLeftY), (edgeBottomRightX), (edgeBottomRightY)); 
-  world.setEdgesRestitution(.4);
-  world.setEdgesFriction(0.5);
+  //world.setEdgesRestitution(.4);
+  //world.setEdgesFriction(0.5);
   
-  world.draw();
+  //world.draw();
 
   mechanisim.draw();
   
@@ -160,7 +160,6 @@ void draw(){
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
   background(255);
   mechanisim.draw();
-  world.draw();  
 }
 /* end draw section ****************************************************************************************************/
 
@@ -207,6 +206,3 @@ class SimulationThread implements Runnable{
 
 
 /* end helper functions section ****************************************************************************************/
-
-
-
