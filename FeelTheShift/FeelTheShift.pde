@@ -72,8 +72,12 @@ FCircle           h1; // grab radius
 GearShifter mechanisim;
 
 /* define sensors */
-Meter rpm_sensor, speed_sensor;
-int rpm_value = 0;
+Meter game_sensor, rpm_sensor, speed_sensor;
+Meter brake, gas, clutch;
+
+PImage brakeImg, clutchImg, gasImg;
+
+int rpm_value = 500;
 int current_time = 0;
 int last_time = 0;
 
@@ -125,9 +129,28 @@ void setup(){
 
   mechanisim = new GearShifter(1000, 400);
 
-  rpm_sensor = new Meter(150,150, 200, 100, 10);
-  speed_sensor = new Meter(850,150, 200, 100, 10);
+  //game_sensor = = new Meter(150,150, 200, 100, 10, color(153);
+  rpm_sensor = new Meter(800, 50, 200, 100, 10, color(255), "RPM"); // 
+  speed_sensor = new Meter(800, 150, 200, 100, 10, color(255), "KM/HR");
   
+  // pedels
+  clutchImg = loadImage("../imgs/clutch.png");
+  brakeImg = loadImage("../imgs/brake.png");
+  gasImg = loadImage("../imgs/gas.png");
+  
+  
+  
+  clutch = new Meter(950 - 75*2, 300, clutchImg.width*0.15, clutchImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  clutch.setIcon(clutchImg);
+  
+  brake = new Meter(950 - 75, 300, brakeImg.width*0.15, brakeImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  brake.setIcon(brakeImg); 
+  
+  gas = new Meter(950, 300, gasImg.width*0.15, gasImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  gas.setIcon(gasImg);  
+  
+  rpm_sensor.setValue(nf(0, 4,0)); // format like 0000;
+  speed_sensor.setValue(nf(0, 3, 0)); // format like 000
   
 
   
@@ -169,12 +192,17 @@ void draw(){
   mechanisim.draw();
   rpm_sensor.draw();
   speed_sensor.draw();
+  
+  clutch.draw();
+  brake.draw();
+  gas.draw();
 
   current_time = millis();
   if(current_time - last_time > 1000){
     last_time = current_time;
-    rpm_sensor.setValue(str(rpm_value++));
-    speed_sensor.setValue(str(rpm_value*10));
+    rpm_value+=100;
+    rpm_sensor.setValue(nf(rpm_value, 4,0));
+    speed_sensor.setValue(nf(rpm_value/10.0, 3, 0));
   }
 }
 /* end draw section ****************************************************************************************************/
