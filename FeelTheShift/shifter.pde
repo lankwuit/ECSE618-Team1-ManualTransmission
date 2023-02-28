@@ -43,7 +43,9 @@ public class GearShifter{
 
     //  this is the endeffector part
     PShape endEffector;
-    float rEE = 2;
+    float rEE = 1;
+
+    // wall part
 
 
 
@@ -186,17 +188,71 @@ public class GearShifter{
     public void create_ee(){
         // creating the end effector at middle - top of the canvas initially
         // initial x position is refferred to the coordinate of H
-        this.endEffector = createShape(ELLIPSE, (xa + slotA_W/2+ (slotA_W + slotE_W2*1.5))*scale*2+w/2, -50.0, rEE*scale, rEE*scale);
+        this.endEffector = createShape(ELLIPSE, (xa + slotA_W/2+ (slotA_W + slotE_W2*1.5))*scale*2+w/2, -50.0, 2*rEE*scale, 2*rEE*scale);
         println(xa + slotA_W/2+ (slotA_W + slotE_W2*1.5));
         this.endEffector.setStroke(color(0));
         this.endEffector.setStrokeWeight(5);
         this.endEffector.setFill(color(255,0,0));
     }   
 
-    public void forcerender(PVector pos_ee){
+    public PVector forcerender(PVector pos_ee){
         // Start definition of wall, look into vertical walls only first
-        // sarting from the left most wall
-        // if(pos_ee.y < )
+
+        /* forces due to walls on end effector */
+        PVector fWall = new PVector(0, 0);
+
+        PVector curr_point = new PVector(0, 0);
+
+        float k = 1e4;
+        float m1 = 1.0;
+        float m2 = 1.0; // needs be negative to mimic the replusion of opposite charges
+
+        // force threshold distance
+        float threshold = 0.25*rEE/100.0;
+        // top half
+        for (int i = 0; i < topCoords.length; i += 2) { // draw the curve that is the slots
+
+
+            // the current point we care about that we will use to calculate the force from
+            // offset x since the new zero is at the centre
+            curr_point.set((topCoords[i] - 0.5) * this.w / (this.scale * 100.0), topCoords[i+1] * this.h / (this.scale * 100.0));
+
+            PVector force = PVector.sub(pos_ee, curr_point); // obtain the directtion vecor (final - inital). From end effecor <---- curr_point
+            float distance = force.mag();
+            
+            println(pos_ee);
+            //println(distance);
+            
+            if(distance < threshold){
+              float repulsive_f = (k * m1 * m2) / (distance * distance); // model the interaction like gravity/electrostatics float m = (G * mass1 * mass2) / (distance * distance);with replusion
+              force.normalize();
+              force.mult(repulsive_f);
+              fWall = fWall.add(force);
+              
+              //println(fWall); 
+            }
+        }
+
+        // bottom half
+        for (int i = bottomCoords.length - 2; i >= 0; i -= 2) { // draw the curve
+            // offset x since the new zero is at the centre
+            curr_point.set((bottomCoords[i] - 0.5) * this.w / (this.scale * 100.0), bottomCoords[i+1] * this.h / (this.scale * 100.0));
+
+            PVector force = PVector.sub(pos_ee, curr_point); // obtain the directtion vecor (final - inital). From end effecor <---- curr_point
+            float distance = force.mag();
+            
+            if(distance < threshold){
+              float repulsive_f = (k * m1 * m2) / (distance * distance); 
+              force.normalize();
+              force.mult(repulsive_f);
+              fWall = fWall.add(force);
+            }
+            
+
+        }
+               
+      
+        return fWall;
     }
 
     /**

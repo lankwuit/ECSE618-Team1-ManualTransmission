@@ -91,7 +91,7 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-  haplyBoard          = new Board(this, "COM3", 0);
+  haplyBoard          = new Board(this, Serial.list()[0], 0);
   widgetOne           = new Device(widgetOneID, haplyBoard);
   pantograph          = new Pantograph();
   
@@ -162,18 +162,13 @@ class SimulationThread implements Runnable{
       pos_ee.set(device_to_graphics(pos_ee));  
       // TODO add relavent force feedback codes right here
 
+      f_ee = mechanisim.forcerender(pos_ee);
+      f_ee.set(graphics_to_device(f_ee));
 
-      //TODO end
-
+      //TODO end 
     }
     
 
-    
-    //s.setToolPosition(edgeTopLeftX+worldWidth/2-(pos_ee).x+2, edgeTopLeftY+(pos_ee).y-7); 
-    //s.updateCouplingForce();
-    //f_ee.set(-s.getVCforceX(), s.getVCforceY());
- 
-    f_ee.div(20000); //
     torques.set(widgetOne.set_device_torques(f_ee.array()));
     widgetOne.device_write_torques();
   
