@@ -37,10 +37,14 @@ public class GearShifter{
 
     float yaa = 1 - ya;
     float ybb = 1 - yb;
+    
+    float kWall = 450;
 
     float scale;
     
     PVector penWall = new PVector(0, 0);
+    PVector fWall   = new PVector(0, 0);
+    PVector fEE    = new PVector(0, 0);
 
     //  this is the endeffector part
     PShape endEffector;
@@ -164,14 +168,10 @@ public class GearShifter{
      * @return {*}
      */    
     public void draw_ee(float xE, float yE){
-        xE = scale * xE;
-        yE = scale * yE; // for conversion betewwen centimeter scale to meter scale
+        // xE = scale * xE;
+        // yE = scale * yE; // multiplying scale for converting meter scale to pixels
         
-        ellipseMode(CENTER);
-        fill(0, 255, 0);
-        ellipse(topCoords[14]*w,topCoords[15]*h,scale *0.02,0.02*scale);
         translate(xE,yE);
-        println(xE,yE);
         shape(this.endEffector);
         
     }
@@ -194,12 +194,17 @@ public class GearShifter{
     public void forcerender(PVector posEE){
         // Start definition of wall, look into vertical walls only first
         // sarting from the left most wall
+
+
+        /* haptic wall force calculation */
+        this.fWall.set(0, 0);
+
         // * topcord 是按照 % width 来做的，width 为常量关于pixel的 posEE是按照米的 ，rEE 是按照M的
-        posEE.x =posEE.x*scale;
-        posEE.y =posEE.y*scale;
-        if (topCoords[3]*w < posEE.y * scale && posEE.y*scale < topCoords[1]*w){
+        float temp = 0.0, temp2=0.0;
+
+        if (topCoords[3]*w < posEE.y  && posEE.y < topCoords[1]*w){
             //TODO adding the half circle forceback here
-        }else if(posEE.y*scale < topCoords[7]*w){
+        }else if(posEE.y< topCoords[7]*w){
             penWall.set(
                 abs(topCoords[0]*w/scale- posEE.x)<rEE ? (topCoords[0]*w/scale>posEE.x ? (topCoords[0]*w/scale-posEE.x-rEE):(-topCoords[0]*w/scale+posEE.x+rEE)):(
                     abs(topCoords[4]*w/scale- posEE.x)<rEE ? (topCoords[4]*w/scale>posEE.x ? (topCoords[4]*w/scale-posEE.x-rEE):(-topCoords[4]*w/scale+posEE.x+rEE)):(
@@ -214,8 +219,29 @@ public class GearShifter{
                 )
             ,0);
         }
+
+        temp2 = penWall.y;
+        penWall.set(temp,temp2);
+
+         
+        //finding force
+        fWall = fWall.add(penWall.mult(-kWall));  
+        
+        println(posEE);
+        
+        fEE = (fWall.copy()).mult(-1);
+        fEE.set(graphics_to_device(fEE));
+        /* end haptic wall force calculation */
     }
 
+    PVector device_to_graphics(PVector deviceFrame){
+        return deviceFrame.set(-deviceFrame.x, deviceFrame.y);
+    }
+
+
+    PVector graphics_to_device(PVector graphicsFrame){
+        return graphicsFrame.set(-graphicsFrame.x, graphicsFrame.y);
+    }
     /**
      * @description:  For the first step of the funtion, bringing the end-effector to the center of the workspace
      * @return {*}

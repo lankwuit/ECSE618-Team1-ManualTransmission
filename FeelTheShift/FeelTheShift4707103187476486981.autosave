@@ -75,7 +75,7 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-  haplyBoard          = new Board(this, "COM9", 0);
+    haplyBoard          = new Board(this, "COM9", 0);
   widgetOne           = new Device(widgetOneID, haplyBoard);
   pantograph          = new Pantograph();
   
@@ -119,6 +119,7 @@ void draw(){
   if(rendering_force == false){
     background(255);
     mechanisim.draw();
+    println(pos_ee);
     mechanisim.draw_ee(pos_ee.x, pos_ee.y);
   }
 }
@@ -141,19 +142,24 @@ class SimulationThread implements Runnable{
     
       angles.set(widgetOne.get_device_angles()); 
       pos_ee.set(widgetOne.get_device_position(angles.array()));
-      pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
+      pos_ee.set(device_to_graphics(pos_ee));  
       // println(pos_ee);
-
-
       // TODO add relavent force feedback codes right here
       mechanisim.forcerender(pos_ee);
 
       //TODO end
 
-    }    
-    torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
+    }
+    
+
+    
+    //s.setToolPosition(edgeTopLeftX+worldWidth/2-(pos_ee).x+2, edgeTopLeftY+(pos_ee).y-7); 
+    //s.updateCouplingForce();
+    //f_ee.set(-s.getVCforceX(), s.getVCforceY());
+ 
+    f_ee.div(20000); //
+    torques.set(widgetOne.set_device_torques(f_ee.array()));
     widgetOne.device_write_torques();
-  
   
     rendering_force = false;
   }
@@ -161,6 +167,13 @@ class SimulationThread implements Runnable{
 /* end simulation section **********************************************************************************************/
 
 
+PVector device_to_graphics(PVector deviceFrame){
+  return deviceFrame.set(-deviceFrame.x, deviceFrame.y);
+}
 
+
+PVector graphics_to_device(PVector graphicsFrame){
+  return graphicsFrame.set(-graphicsFrame.x, graphicsFrame.y);
+}
 
 /* end helper functions section ****************************************************************************************/
