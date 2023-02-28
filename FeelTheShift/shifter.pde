@@ -39,11 +39,12 @@ public class GearShifter{
     float ybb = 1 - yb;
 
     float scale;
-    FLine myLine;
+    
+    PVector penWall = new PVector(0, 0);
 
     //  this is the endeffector part
     PShape endEffector;
-    float rEE = 2;
+    float rEE = 0.02;
 
 
 
@@ -93,11 +94,11 @@ public class GearShifter{
     };
 
     // constructor
-    public GearShifter(int w, int h, float pixelsPerCm){
+    public GearShifter(int w, int h, float pixelsPerMeter){
         this.w = w - 1;
         this.h = h - 1;
 
-        this.scale = pixelsPerCm;
+        this.scale = pixelsPerMeter;
     }
 
   
@@ -138,20 +139,11 @@ public class GearShifter{
             
         }
 
-
         // side lines
         line(this.w * topCoords[0], this.h * topCoords[1], this.w * bottomCoords[0], this.h * bottomCoords[1]);
         line(this.w * topCoords[topCoords.length - 2], this.h * topCoords[topCoords.length - 1], this.w * bottomCoords[bottomCoords.length - 2], this.h * bottomCoords[bottomCoords.length - 1]);
 
-
-
-        // FLine leftLine = new FLine(this.scale * this.w * topCoords[0], this.scale * this.h * topCoords[1], this.scale * this.w * bottomCoords[0], this.scale * this.h * bottomCoords[1]);
-        // FLine rightLine = new FLine(this.scale * this.w * topCoords[topCoords.length - 2], this.scale * this.h * topCoords[topCoords.length - 1],
-        // this.scale * this.w * bottomCoords[bottomCoords.length - 2], this.scale * this.h * bottomCoords[bottomCoords.length - 1]);
-
-        // this.world.add(leftLine);
-        // this.world.add(rightLine);
-
+        // highlighting the interesection points of the pattern
         fill(255, 0, 0);
         noStroke();
         ellipseMode(CENTER);
@@ -163,6 +155,7 @@ public class GearShifter{
         for (int i = bottomCoords.length - 2; i >= 0; i -= 2) { // // show the coordinate points chosen in green
             ellipse(this.w * bottomCoords[i], this.h * bottomCoords[i + 1], 3, 3);
         }
+
         
     }
 
@@ -171,10 +164,16 @@ public class GearShifter{
      * @return {*}
      */    
     public void draw_ee(float xE, float yE){
-        xE = scale * xE *100;
-        yE = scale * yE *100; // for conversion betewwen centimeter scale to meter scale
+        xE = scale * xE;
+        yE = scale * yE; // for conversion betewwen centimeter scale to meter scale
+        
+        ellipseMode(CENTER);
+        fill(0, 255, 0);
+        ellipse(topCoords[14]*w,topCoords[15]*h,scale *0.02,0.02*scale);
         translate(xE,yE);
+        println(xE,yE);
         shape(this.endEffector);
+        
     }
     
 
@@ -186,17 +185,35 @@ public class GearShifter{
     public void create_ee(){
         // creating the end effector at middle - top of the canvas initially
         // initial x position is refferred to the coordinate of H
-        this.endEffector = createShape(ELLIPSE, (xa + slotA_W/2+ (slotA_W + slotE_W2*1.5))*scale*2+w/2, -50.0, rEE*scale, rEE*scale);
-        println(xa + slotA_W/2+ (slotA_W + slotE_W2*1.5));
+        this.endEffector = createShape(ELLIPSE, topCoords[14]*w, -50.0, rEE*scale, rEE*scale);
         this.endEffector.setStroke(color(0));
         this.endEffector.setStrokeWeight(5);
         this.endEffector.setFill(color(255,0,0));
     }   
 
-    public void forcerender(PVector pos_ee){
+    public void forcerender(PVector posEE){
         // Start definition of wall, look into vertical walls only first
         // sarting from the left most wall
-        // if(pos_ee.y < )
+        // * topcord 是按照 % width 来做的，width 为常量关于pixel的 posEE是按照米的 ，rEE 是按照M的
+        posEE.x =posEE.x*scale;
+        posEE.y =posEE.y*scale;
+        if (topCoords[3]*w < posEE.y * scale && posEE.y*scale < topCoords[1]*w){
+            //TODO adding the half circle forceback here
+        }else if(posEE.y*scale < topCoords[7]*w){
+            penWall.set(
+                abs(topCoords[0]*w/scale- posEE.x)<rEE ? (topCoords[0]*w/scale>posEE.x ? (topCoords[0]*w/scale-posEE.x-rEE):(-topCoords[0]*w/scale+posEE.x+rEE)):(
+                    abs(topCoords[4]*w/scale- posEE.x)<rEE ? (topCoords[4]*w/scale>posEE.x ? (topCoords[4]*w/scale-posEE.x-rEE):(-topCoords[4]*w/scale+posEE.x+rEE)):(
+                        abs(topCoords[10]*w/scale- posEE.x)<rEE ? (topCoords[10]*w/scale>posEE.x ? (topCoords[10]*w/scale-posEE.x-rEE):(-topCoords[10]*w/scale+posEE.x+rEE)):(
+                            abs(topCoords[16]*w/scale- posEE.x)<rEE ? (topCoords[16]*w/scale>posEE.x ? (topCoords[16]*w/scale-posEE.x-rEE):(-topCoords[16]*w/scale+posEE.x+rEE)):(
+                                abs(topCoords[22]*w/scale- posEE.x)<rEE ? (topCoords[22]*w/scale>posEE.x ? (topCoords[22]*w/scale-posEE.x-rEE):(-topCoords[22]*w/scale+posEE.x+rEE)):(
+                                    abs(topCoords[28]*w/scale- posEE.x)<rEE ? (topCoords[28]*w/scale>posEE.x ? (topCoords[28]*w/scale-posEE.x-rEE):(-topCoords[28]*w/scale+posEE.x+rEE)):0
+                                )
+                            )
+                        ) 
+                    )
+                )
+            ,0);
+        }
     }
 
     /**
@@ -205,7 +222,7 @@ public class GearShifter{
      */
     public void resetdevice(){
 
-
+        return;
     }
 
 }

@@ -2,6 +2,7 @@
 import processing.serial.*;
 import static java.util.concurrent.TimeUnit.*;
 import java.util.concurrent.*;
+import controlP5.*;
 /* end library imports *************************************************************************************************/  
 
 
@@ -35,7 +36,7 @@ long              baseFrameRate                       = 120;
 /* elements definition *************************************************************************************************/
 
 /* Screen and world setup parameters */
-float             pixelsPerCentimeter                 = 40.0;
+float             pixelsPerMeter                 = 4000;
 
 /* data for a 2DOF device */
 /* joint space */
@@ -49,23 +50,6 @@ PVector           f_ee                                = new PVector(0, 0);
 /* world size in pixels */
 int w = 1000;
 int h = 400;
-
-
-/* World boundaries in centimeters*/
-FWorld            world;
-float             worldWidth                          = w/pixelsPerCentimeter;  
-float             worldHeight                         = h/pixelsPerCentimeter;
-
-float             edgeTopLeftX                        = 0.0; 
-float             edgeTopLeftY                        = 0.0; 
-float             edgeBottomRightX                    = worldWidth; 
-float             edgeBottomRightY                    = worldHeight;
-
-/* joints to be created for avatar */
-boolean           jointCreated                        = false;
-FDistanceJoint    d1;
-
-
 
 /* define gear mechanisim */
 GearShifter mechanisim;
@@ -91,7 +75,7 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-  haplyBoard          = new Board(this, "COM3", 0);
+  haplyBoard          = new Board(this, "COM9", 0);
   widgetOne           = new Device(widgetOneID, haplyBoard);
   pantograph          = new Pantograph();
   
@@ -109,16 +93,12 @@ void setup(){
   
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
-  mechanisim = new GearShifter(1000, 400, pixelsPerCentimeter);
-  
-  
-
+  mechanisim = new GearShifter(w, h, pixelsPerMeter);
   
   /* Haptic Tool Initialization */
   
   mechanisim.draw();
   mechanisim.create_ee();
-  
   
   /* setup framerate speed */
   frameRate(baseFrameRate);
@@ -135,9 +115,13 @@ void setup(){
 /* draw section ********************************************************************************************************/
 void draw(){
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-  background(255);
-  mechanisim.draw();
-  mechanisim.draw_ee(pos_ee.x, pos_ee.y);
+  
+  if(rendering_force == false){
+    background(255);
+    mechanisim.draw();
+    println(pos_ee);
+    mechanisim.draw_ee(pos_ee.x, pos_ee.y);
+  }
 }
 /* end draw section ****************************************************************************************************/
 
@@ -153,15 +137,15 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     if(haplyBoard.data_available()){
-      
       /* GET END-EFFECTOR STATE (TASK SPACE) */
       widgetOne.device_read_data();
     
       angles.set(widgetOne.get_device_angles()); 
       pos_ee.set(widgetOne.get_device_position(angles.array()));
       pos_ee.set(device_to_graphics(pos_ee));  
+      // println(pos_ee);
       // TODO add relavent force feedback codes right here
-
+      forcerender(pos_ee);
 
       //TODO end
 
