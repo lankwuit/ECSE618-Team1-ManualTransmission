@@ -36,10 +36,12 @@ public class GearShifter{
     float xa = 0.5-0.45/2, ya = 0.15; // coordinate for A
     float yb = 0.05; // y coordinate for B
 
+    boolean initialFlag = false;
+
     float yaa = 1 - ya;
     float ybb = 1 - yb;
     
-    float kpwall = 1250;
+    float kpwall = 1000;
     float initial_offset = 0.0;
     float ballCreationYPosition = 0.0;
 
@@ -51,7 +53,7 @@ public class GearShifter{
 
     //  this is the endeffector part
     PShape endEffector;
-    float rEE = 0.01;//in terms of meter
+    float rEE = 0.014;//in terms of meter
 
 
     // the coordinates of curve to draw; must have 2n enteries so that (x/w,y/h) = topCoords[i], topCoords[i+1]
@@ -193,6 +195,37 @@ public class GearShifter{
         this.endEffector.setStrokeWeight(5);
         this.endEffector.setFill(color(255,0,0));
     }   
+    
+    float[] curvecenter = {
+        topCoords[2], topCoords[1], //below B
+        topCoords[14], topCoords[13], //below H
+        topCoords[26], topCoords[25], //below N
+        bottomCoords[2], bottomCoords[1], //below B
+        bottomCoords[14], bottomCoords[13], //below H
+        bottomCoords[26], bottomCoords[25] //below N
+    };
+    /**
+     * @description: 
+     //TODO finish this up
+     * @return {*}
+     */
+    // public void initialHandler(PVector pos){
+    //     while(abs(pos.y - 0.5)<0.1){
+    //         float P=0.2;
+    //         float I=0.06;
+    //         float D=1.0;
+            
+    //         float dist_X = x_m-scale*pos.x;
+    //         cumerrorx += dist_X*timedif*0.000000001;
+    //         float dist_Y = y_m-scale*pos.y;
+            
+    //     cumerrory += dist_Y*timedif*0.000000001;
+    //         fEE.x = constrain(P*dist_X,-4,4) + constrain(I*cumerrorx,-4,4) + constrain(D*diffx,-8,8);
+    //         fEE.y = constrain(P*dist_Y,-4,4) + constrain(I*cumerrory,-4,4) + constrain(D*diffy,-8,8); 
+            
+    //     }
+
+    // }
 
     public void forcerender(PVector posEE){
         // Start definition of wall, look into vertical walls only first
@@ -206,8 +239,15 @@ public class GearShifter{
         PVector posReltoCustomSpace = new PVector(0, 0);
         posReltoCustomSpace.set(posEE.x+w/2/scale, posEE.y-yinitial);
 
+        //check if the initial position tuning has passed
+        //if (!initialFlag){
+        //    initialHandler(posReltoCustomSpace);
+        //    return;
+        //}
+
         // * topcord 是按照 % width 来做的，width 为常量关于pixel的 posEE是按照米的 ，rEE 是按照M的
         float temp = 0.0, temp2=0.0;
+        //force feedback for all vertical walls
         if (topCoords[3]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < topCoords[1]*h/scale){
             //TODO adding the half circle forceback here
             penWall.set(0,0);
@@ -250,6 +290,7 @@ public class GearShifter{
         }
         
         temp = penWall.x;
+        //for DEF, JKL etc.
         if(topCoords[6]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[10]*w/scale){
             penWall.set(0,
                 abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale>posReltoCustomSpace.y ? (topCoords[7]*h/scale-posReltoCustomSpace.y-rEE):(topCoords[7]*h/scale-posReltoCustomSpace.y+rEE)):(
@@ -266,7 +307,7 @@ public class GearShifter{
         temp2 = penWall.y;
         penWall.set(temp,temp2);
 
-         
+        println(posReltoCustomSpace);
         println(penWall);
         //finding force
         fWall = fWall.add(penWall.mult(-kpwall));  
