@@ -71,6 +71,16 @@ FCircle           h1; // grab radius
 /* define gear mechanisim */
 GearShifter mechanisim;
 
+/* define sensors */
+Meter game_sensor, rpm_sensor, speed_sensor;
+Meter brake, gas, clutch;
+
+PImage brakeImg, clutchImg, gasImg;
+
+int rpm_value = 500;
+int current_time = 0;
+int last_time = 0;
+
 /* end elements definition *********************************************************************************************/  
 
 
@@ -117,8 +127,30 @@ void setup(){
   hAPI_Fisica.setScale(pixelsPerCentimeter); 
   world               = new FWorld();
 
-  mechanisim = new GearShifter(1000, 400, world, pixelsPerCentimeter);
+  mechanisim = new GearShifter(1000, 400);
+
+  //game_sensor = = new Meter(150,150, 200, 100, 10, color(153);
+  rpm_sensor = new Meter(800, 50, 200, 100, 10, color(255), "RPM"); // 
+  speed_sensor = new Meter(800, 150, 200, 100, 10, color(255), "KM/HR");
   
+  // pedels
+  clutchImg = loadImage("../imgs/clutch.png");
+  brakeImg = loadImage("../imgs/brake.png");
+  gasImg = loadImage("../imgs/gas.png");
+  
+  
+  
+  clutch = new Meter(950 - 75*2, 300, clutchImg.width*0.15, clutchImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  clutch.setIcon(clutchImg);
+  
+  brake = new Meter(950 - 75, 300, brakeImg.width*0.15, brakeImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  brake.setIcon(brakeImg); 
+  
+  gas = new Meter(950, 300, gasImg.width*0.15, gasImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  gas.setIcon(gasImg);  
+  
+  rpm_sensor.setValue(nf(0, 4,0)); // format like 0000;
+  speed_sensor.setValue(nf(0, 3, 0)); // format like 000
   
 
   
@@ -139,9 +171,6 @@ void setup(){
   //world.setEdgesFriction(0.5);
   
   //world.draw();
-
-  mechanisim.draw();
-  
   
   /* setup framerate speed */
   frameRate(baseFrameRate);
@@ -150,6 +179,7 @@ void setup(){
   /* setup simulation thread to run at 1kHz */ 
   //SimulationThread st = new SimulationThread();
   //scheduler.scheduleAtFixedRate(st, 1, 1, MILLISECONDS);
+  last_time = millis();
 }
 /* end setup section ***************************************************************************************************/
 
@@ -160,11 +190,43 @@ void draw(){
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
   background(255);
   mechanisim.draw();
+  rpm_sensor.draw();
+  speed_sensor.draw();
+  
+  clutch.draw();
+  brake.draw();
+  gas.draw();
+
+  current_time = millis();
+  if(current_time - last_time > 1000){
+    last_time = current_time;
+    rpm_value+=100;
+    rpm_sensor.setValue(nf(rpm_value, 4,0));
+    speed_sensor.setValue(nf(rpm_value/10.0, 3, 0));
+  }
 }
 /* end draw section ****************************************************************************************************/
 
+void keyPressed(){
+  
+  if(key == 'a' || key == 'A')
+    clutch.press();
+  if(key == 's' || key == 'S')
+    brake.press();
+    
+  if(key == 'd' || key == 'D')
+    gas.press();
+}
 
-
+void keyReleased(){
+  
+  if(key == 'a' || key == 'A')
+    clutch.release();
+  if(key == 's' || key == 'S')
+    brake.release();
+  if(key == 'd' || key == 'D')
+    gas.release();
+}
 
 /* simulation section **************************************************************************************************/
 class SimulationThread implements Runnable{

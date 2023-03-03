@@ -17,10 +17,6 @@ public class GearShifter{
     float yaa = 1 - ya;
     float ybb = 1 - yb;
 
-    float scale = 1.0;
-    FWorld world;
-    FLine myLine;
-
 
 
     // the coordinates of curve to draw; must have 2n enteries so that (x/w,y/h) = topCoords[i], topCoords[i+1]
@@ -69,12 +65,9 @@ public class GearShifter{
     };
 
     // constructor
-    public GearShifter(int w, int h, FWorld world, float pixelsPerCm){
+    public GearShifter(int w, int h){
         this.w = w - 1;
         this.h = h - 1;
-
-        this.world = world;
-        this.scale = 1.0/pixelsPerCm;
     }
 
 
@@ -120,25 +113,17 @@ public class GearShifter{
         line(this.w * topCoords[topCoords.length - 2], this.h * topCoords[topCoords.length - 1], this.w * bottomCoords[bottomCoords.length - 2], this.h * bottomCoords[bottomCoords.length - 1]);
 
 
+        // fill(255, 0, 0);
+        // noStroke();
+        // ellipseMode(CENTER);
+        // for (int i = 0; i < topCoords.length; i += 2) { // show the coordinate points chosen in red
+        //     ellipse(this.w * topCoords[i], this.h * topCoords[i + 1], 3, 3);
+        // }
 
-        // FLine leftLine = new FLine(this.scale * this.w * topCoords[0], this.scale * this.h * topCoords[1], this.scale * this.w * bottomCoords[0], this.scale * this.h * bottomCoords[1]);
-        // FLine rightLine = new FLine(this.scale * this.w * topCoords[topCoords.length - 2], this.scale * this.h * topCoords[topCoords.length - 1],
-        // this.scale * this.w * bottomCoords[bottomCoords.length - 2], this.scale * this.h * bottomCoords[bottomCoords.length - 1]);
-
-        // this.world.add(leftLine);
-        // this.world.add(rightLine);
-
-        fill(255, 0, 0);
-        noStroke();
-        ellipseMode(CENTER);
-        for (int i = 0; i < topCoords.length; i += 2) { // show the coordinate points chosen in red
-            ellipse(this.w * topCoords[i], this.h * topCoords[i + 1], 3, 3);
-        }
-
-        fill(0, 255, 0);
-        for (int i = bottomCoords.length - 2; i >= 0; i -= 2) { // // show the coordinate points chosen in green
-            ellipse(this.w * bottomCoords[i], this.h * bottomCoords[i + 1], 3, 3);
-        }
+        // fill(0, 255, 0);
+        // for (int i = bottomCoords.length - 2; i >= 0; i -= 2) { // // show the coordinate points chosen in green
+        //     ellipse(this.w * bottomCoords[i], this.h * bottomCoords[i + 1], 3, 3);
+        // }
     }
 
 }
