@@ -11,6 +11,7 @@ public class Meter {
   String name; // either "RPM" or "KM/HR"
   boolean show_icon = false;
   PImage icon;
+  boolean pressed = false;
 
   // constructor
   public Meter(float x, float y, float w, float h, float radius, color c, String name) {
@@ -70,6 +71,20 @@ public class Meter {
   
   private void drawIcon(){
     imageMode(CENTER);
+    
+    if(this.pressed)
+      tint(255, 120);
+     else
+       tint(255, 255);
+       
     image(this.icon, this.x, this.y, this.w, this.h);
+  }
+  
+  public void press(){
+    this.pressed = true;
+  }
+  
+  public void release(){
+    this.pressed = false;
   }
 }

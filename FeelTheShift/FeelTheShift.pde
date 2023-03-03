@@ -207,8 +207,26 @@ void draw(){
 }
 /* end draw section ****************************************************************************************************/
 
+void keyPressed(){
+  
+  if(key == 'a' || key == 'A')
+    clutch.press();
+  if(key == 's' || key == 'S')
+    brake.press();
+    
+  if(key == 'd' || key == 'D')
+    gas.press();
+}
 
-
+void keyReleased(){
+  
+  if(key == 'a' || key == 'A')
+    clutch.release();
+  if(key == 's' || key == 'S')
+    brake.release();
+  if(key == 'd' || key == 'D')
+    gas.release();
+}
 
 /* simulation section **************************************************************************************************/
 class SimulationThread implements Runnable{
