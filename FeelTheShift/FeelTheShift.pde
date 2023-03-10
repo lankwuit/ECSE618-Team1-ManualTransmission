@@ -100,7 +100,6 @@ void setup(){
   
 
   widgetOne.device_set_parameters();
-  mechanisim = new GearShifter(1000, 400);
 
   //game_sensor = = new Meter(150,150, 200, 100, 10, color(153);
   rpm_sensor = new Meter(800, 50, 200, 100, 10, color(255), "RPM"); // 
@@ -153,13 +152,15 @@ void draw(){
   
   if(rendering_force == false){
     background(255);
-    mechanisim.draw();
-    mechanisim.draw_ee(pos_ee.x, pos_ee.y);
+    
   speed_sensor.draw();
   
   clutch.draw();
   brake.draw();
   gas.draw();
+    
+    mechanisim.draw();
+    mechanisim.draw_ee(pos_ee.x, pos_ee.y);
 
   current_time = millis();
   if(current_time - last_time > 1000){
@@ -168,6 +169,7 @@ void draw(){
     rpm_sensor.setValue(nf(rpm_value, 4,0));
     speed_sensor.setValue(nf(rpm_value/10.0, 3, 0));
   }
+}
 }
 /* end draw section ****************************************************************************************************/
 
