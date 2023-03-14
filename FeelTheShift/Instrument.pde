@@ -1,3 +1,4 @@
+import processing.sound.*;
 
 enum METER_TYPE{RPM, SPEED, PEDAL, OTHER}; // types of meters
 
@@ -7,15 +8,24 @@ public class Meter {
   float w, h; // width and height of the box in pixels
   float radius; // radius of the corners for the box
   float x, y; // centre x,y position in pixels
+
+
   String value; // the printed value
+  int font_size;
+  String name; // either "RPM" or "KM/HR"
+
   PShape sensor;  // The PShape object
   PShape border; // The PShape object
   PFont font; // the font used to display the text
-  int font_size;
-  String name; // either "RPM" or "KM/HR"
+
+
   boolean show_icon = false; // if true, show an icon instead of text
   PImage icon;
   boolean pressed = false; // is the button pressed?
+
+  SoundFile sound = null; // the sound to play when the button is pressed
+
+  // the type of instrument
   METER_TYPE type;
 
   // constructor
@@ -66,6 +76,10 @@ public class Meter {
     this.icon = img;
   }
 
+  public void setSound(SoundFile sound){
+    this.sound = sound;
+  }
+
   public void draw() {
     switch (this.type) {
       case RPM:
@@ -105,6 +119,10 @@ public class Meter {
   }
   
   public void press(){
+    // only play the sound if it is not already playing
+    // otherwise we will get a lot of overlapping sounds
+    if (this.sound != null && this.pressed == false)
+      this.sound.play(); // play the sound
     this.pressed = true;
   }
   

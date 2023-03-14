@@ -38,6 +38,8 @@ int gas_y = 300;
 Meter brake, gas, clutch;
 PImage brakeImg, clutchImg, gasImg;
 
+SoundFile pedal_sound;
+
 /* rpm & speed sensor size definitons in pixels */
 int rpm_x = 800;
 int rpm_y = 50;
@@ -121,21 +123,28 @@ void setup(){
   rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM); // 
   speed_sensor = new Meter(speed_x, speed_y, speed_w, speed_h, METER_TYPE.SPEED);
   
-  // pedels
+  // pedels icons
   clutchImg = loadImage("../imgs/clutch.png");
   brakeImg = loadImage("../imgs/brake.png");
   gasImg = loadImage("../imgs/gas.png");
+
+  // pedal sounds
+  pedal_sound = new SoundFile(this, "../audio/pedal.mp3");
   
- 
-  
+  // setup pedals
   clutch = new Meter(clutch_x, gas_y, clutchImg.width*0.15, clutchImg.height*0.15, METER_TYPE.PEDAL); // draw brake pedel
   clutch.setIcon(clutchImg);
+  clutch.setSound(pedal_sound);
   
   brake = new Meter(brake_x, gas_y, brakeImg.width*0.15, brakeImg.height*0.15, METER_TYPE.PEDAL); // draw brake pedel
   brake.setIcon(brakeImg); 
+  brake.setSound(pedal_sound);
   
   gas = new Meter(gas_x, gas_y, gasImg.width*0.15, gasImg.height*0.15, METER_TYPE.PEDAL); // draw brake pedel
-  gas.setIcon(gasImg);  
+  gas.setIcon(gasImg);
+  gas.setSound(pedal_sound);
+
+
   
   rpm_sensor.setValue(nf(0, 4,0)); // format like 0000;
   speed_sensor.setValue(nf(0, 3, 0)); // format like 000
