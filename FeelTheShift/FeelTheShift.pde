@@ -25,7 +25,36 @@ boolean           rendering_force                     = false;
 float             radsPerDegree                       = 0.01745;
 /* end device block definition *****************************************************************************************/
 
+/* world size in pixels */
+int w = 1000;
+int h = 400;
 
+/* brake, gas, clutch position definitions in pixels*/
+int clutch_x = 50;
+int brake_x = 50 + 75;
+int gas_x = 50 + 75*2;
+int gas_y = 300;
+
+Meter brake, gas, clutch;
+PImage brakeImg, clutchImg, gasImg;
+
+/* rpm & speed sensor size definitons in pixels */
+int rpm_x = 800;
+int rpm_y = 50;
+int rpm_w = 200;
+int rpm_h = 100;
+
+int speed_x = 800;
+int speed_y = 150;
+int speed_w = 200;
+int speed_h = 100;
+
+/* define sensors */
+Meter game_sensor, rpm_sensor, speed_sensor;
+
+int rpm_value = 500;
+int current_time = 0;
+int last_time = 0;
 
 /* framerate definition ************************************************************************************************/
 long              baseFrameRate                       = 120;
@@ -47,22 +76,9 @@ PVector           torques                             = new PVector(0, 0);
 PVector           pos_ee                              = new PVector(0, 0);
 PVector           f_ee                                = new PVector(0, 0); 
 
-/* world size in pixels */
-int w = 1000;
-int h = 400;
 
 /* define gear mechanisim */
 GearShifter mechanisim;
-
-/* define sensors */
-Meter game_sensor, rpm_sensor, speed_sensor;
-Meter brake, gas, clutch;
-
-PImage brakeImg, clutchImg, gasImg;
-
-int rpm_value = 500;
-int current_time = 0;
-int last_time = 0;
 
 /* end elements definition *********************************************************************************************/  
 
@@ -85,25 +101,25 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-  haplyBoard          = new Board(this, "COM9", 0);
-  widgetOne           = new Device(widgetOneID, haplyBoard);
-  pantograph          = new Pantograph();
+  // haplyBoard          = new Board(this, "COM9", 0);
+  // widgetOne           = new Device(widgetOneID, haplyBoard);
+  // pantograph          = new Pantograph();
   
-  widgetOne.set_mechanism(pantograph);
+  // widgetOne.set_mechanism(pantograph);
   
-  //start: added to fix inverse motion of the ball
-  widgetOne.add_actuator(1, CCW, 2);
-  widgetOne.add_actuator(2, CW, 1);
+  // //start: added to fix inverse motion of the ball
+  // widgetOne.add_actuator(1, CCW, 2);
+  // widgetOne.add_actuator(2, CW, 1);
 
-  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-  widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  // widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  // widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-  widgetOne.device_set_parameters();
+  // widgetOne.device_set_parameters();
 
   //game_sensor = = new Meter(150,150, 200, 100, 10, color(153);
-  rpm_sensor = new Meter(800, 50, 200, 100, 10, color(255), "RPM"); // 
-  speed_sensor = new Meter(800, 150, 200, 100, 10, color(255), "KM/HR");
+  rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM); // 
+  speed_sensor = new Meter(speed_x, speed_y, speed_w, speed_h, METER_TYPE.SPEED);
   
   // pedels
   clutchImg = loadImage("../imgs/clutch.png");
@@ -112,13 +128,13 @@ void setup(){
   
  
   
-  clutch = new Meter(950 - 75*2, 300, clutchImg.width*0.15, clutchImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  clutch = new Meter(clutch_x, gas_y, clutchImg.width*0.15, clutchImg.height*0.15, METER_TYPE.PEDAL); // draw brake pedel
   clutch.setIcon(clutchImg);
   
-  brake = new Meter(950 - 75, 300, brakeImg.width*0.15, brakeImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  brake = new Meter(brake_x, gas_y, brakeImg.width*0.15, brakeImg.height*0.15, METER_TYPE.PEDAL); // draw brake pedel
   brake.setIcon(brakeImg); 
   
-  gas = new Meter(950, 300, gasImg.width*0.15, gasImg.height*0.15, 10, color(255), ""); // draw brake pedel
+  gas = new Meter(gas_x, gas_y, gasImg.width*0.15, gasImg.height*0.15, METER_TYPE.PEDAL); // draw brake pedel
   gas.setIcon(gasImg);  
   
   rpm_sensor.setValue(nf(0, 4,0)); // format like 0000;
@@ -153,23 +169,23 @@ void draw(){
   if(rendering_force == false){
     background(255);
     
-  speed_sensor.draw();
+    rpm_sensor.draw();
   
-  clutch.draw();
-  brake.draw();
-  gas.draw();
+    clutch.draw();
+    brake.draw();
+    gas.draw();
     
     mechanisim.draw();
     mechanisim.draw_ee(pos_ee.x, pos_ee.y);
 
-  current_time = millis();
-  if(current_time - last_time > 1000){
-    last_time = current_time;
-    rpm_value+=100;
-    rpm_sensor.setValue(nf(rpm_value, 4,0));
-    speed_sensor.setValue(nf(rpm_value/10.0, 3, 0));
+    // current_time = millis();
+    // if(current_time - last_time > 1000){
+    //   last_time = current_time;
+    //   rpm_value+=100;
+    //   rpm_sensor.setValue(nf(rpm_value, 4,0));
+    //   speed_sensor.setValue(nf(rpm_value/10.0, 3, 0));
+    // }
   }
-}
 }
 /* end draw section ****************************************************************************************************/
 
@@ -179,7 +195,6 @@ void keyPressed(){
     clutch.press();
   if(key == 's' || key == 'S')
     brake.press();
-    
   if(key == 'd' || key == 'D')
     gas.press();
 }
@@ -202,24 +217,23 @@ class SimulationThread implements Runnable{
     
     rendering_force = true;
     
-    if(haplyBoard.data_available()){
-      /* GET END-EFFECTOR STATE (TASK SPACE) */
-      widgetOne.device_read_data();
+    // if(haplyBoard.data_available()){
+    //   /* GET END-EFFECTOR STATE (TASK SPACE) */
+    //   widgetOne.device_read_data();
     
-      angles.set(widgetOne.get_device_angles()); 
-      pos_ee.set(widgetOne.get_device_position(angles.array()));
-      pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
-      // println(pos_ee);
+    //   angles.set(widgetOne.get_device_angles()); 
+    //   pos_ee.set(widgetOne.get_device_position(angles.array()));
+    //   pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
 
 
-      // TODO add relavent force feedback codes right here
-      mechanisim.forcerender(pos_ee);
+    //   // TODO add relavent force feedback codes right here
+    //   mechanisim.forcerender(pos_ee);
 
-      //TODO end
+    //   //TODO end
 
-    }    
-    torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
-    widgetOne.device_write_torques();
+    // }    
+    // torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
+    // widgetOne.device_write_torques();
   
   
     rendering_force = false;
