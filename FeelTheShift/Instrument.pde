@@ -24,6 +24,9 @@ public class Meter {
   boolean pressed = false; // is the button pressed?
 
   SoundFile sound = null; // the sound to play when the button is pressed
+  
+  int min_value = 0;
+  int max_value = 100;
 
   // the type of instrument
   METER_TYPE type;
@@ -35,7 +38,7 @@ public class Meter {
     this.x = x;
     this.y = y;
     this.radius = 10;
-    this.value = "-1";
+    this.value = "0";
     this.type = type;
     this.font_size = 50;
 
@@ -44,10 +47,12 @@ public class Meter {
       case RPM:
         this.font = createFont("Arial", this.font_size, true);
         this.name = "RPM";
+        this.setValue(0);
         break;
       case SPEED:
         this.font = createFont("Arial", this.font_size, true);
         this.name = "KM/HR";
+        this.setValue(0);
         break;
 
       case PEDAL:
@@ -68,8 +73,58 @@ public class Meter {
   }
 
 
-  public void setValue(String value) {
-    this.value = value;
+  public void setValue(int value) {
+    switch (this.type) {
+      case RPM:
+        this.value = nf(value, 4,0);
+        break;
+      case SPEED:
+        this.value = nf(value, 3, 0);
+        break;
+    }
+  }
+  
+  public void setRange(int min, int max) {
+    this.min_value = min;
+    this.max_value = max;
+  }
+
+  public void increaseValue() {
+    // increase the value by a 
+    float val = float(this.value);
+
+    val += (1-val/this.max_value)*this.max_value*0.1; // increase the value by 10% of the max value initally, then slowly increase afterwards
+
+    if (val > this.max_value) // clamp the value to the max value
+      val = this.max_value - 1;
+
+    if(val % 100 != 0)
+      val -= val % 100; // round to the nearest 100
+    
+    this.setValue((int) val); // update the value
+
+    if (this.sound != null){
+
+      float start_loc = this.sound.duration()*(val/this.max_value); // set the start location the sound
+      this.sound.jump(start_loc); // jump to the start location
+      this.sound.play(1, val/this.max_value); // play the sound
+    }
+  }
+
+  public void decreaseValue() {
+    // apply damping to the value
+    float val = float(this.value);
+    
+    val -= (val/this.max_value)*10; // decrease the value
+
+    // clamp the value to the min value
+    if(val <= this.min_value)
+      val = this.min_value;
+
+    if(val % 100 != 0)
+      val -= val % 100; // round to the nearest 100
+
+    this.setValue((int) val); // update the value
   }
   
   public void setIcon(PImage img){

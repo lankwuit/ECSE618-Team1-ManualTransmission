@@ -45,11 +45,15 @@ int rpm_x = 800;
 int rpm_y = 50;
 int rpm_w = 200;
 int rpm_h = 100;
+int MAX_RPM = 10000;
 
 int speed_x = 800;
 int speed_y = 150;
 int speed_w = 200;
 int speed_h = 100;
+int MAX_SPEED = 160; // km/h
+
+SoundFile engine_rev_sound;
 
 /* define sensors */
 Meter game_sensor, rpm_sensor, speed_sensor;
@@ -119,9 +123,17 @@ void setup(){
 
   // widgetOne.device_set_parameters();
 
+  // engine sound
+  engine_rev_sound = new SoundFile(this, "../audio/engine_rev.mp3");
+
   //game_sensor = = new Meter(150,150, 200, 100, 10, color(153);
   rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM); // 
   speed_sensor = new Meter(speed_x, speed_y, speed_w, speed_h, METER_TYPE.SPEED);
+
+  rpm_sensor.setRange(0, MAX_RPM);
+  speed_sensor.setRange(0, MAX_SPEED);
+
+  rpm_sensor.setSound(engine_rev_sound);
   
   // pedels icons
   clutchImg = loadImage("../imgs/clutch.png");
@@ -142,13 +154,7 @@ void setup(){
   
   gas = new Meter(gas_x, gas_y, gasImg.width*0.15, gasImg.height*0.15, METER_TYPE.PEDAL); // draw brake pedel
   gas.setIcon(gasImg);
-  gas.setSound(pedal_sound);
-
-
-  
-  rpm_sensor.setValue(nf(0, 4,0)); // format like 0000;
-  speed_sensor.setValue(nf(0, 3, 0)); // format like 000
-  
+  gas.setSound(pedal_sound);  
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
   mechanisim = new GearShifter(w, h, pixelsPerMeter);
@@ -187,6 +193,11 @@ void draw(){
     mechanisim.draw();
     mechanisim.draw_ee(pos_ee.x, pos_ee.y);
 
+    // decrase rpm value every 10 frames
+    if(frameCount % 10 == 0){
+      rpm_sensor.decreaseValue();
+    }
+
     // current_time = millis();
     // if(current_time - last_time > 1000){
     //   last_time = current_time;
@@ -204,8 +215,10 @@ void keyPressed(){
     clutch.press();
   if(key == 's' || key == 'S')
     brake.press();
-  if(key == 'd' || key == 'D')
+  if(key == 'd' || key == 'D'){
     gas.press();
+    rpm_sensor.increaseValue(); // increase the rpm value
+  }
 }
 
 void keyReleased(){
@@ -214,8 +227,9 @@ void keyReleased(){
     clutch.release();
   if(key == 's' || key == 'S')
     brake.release();
-  if(key == 'd' || key == 'D')
+  if(key == 'd' || key == 'D'){
     gas.release();
+  }
 }
 
 /* simulation section **************************************************************************************************/
