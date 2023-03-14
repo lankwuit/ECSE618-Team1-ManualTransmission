@@ -104,10 +104,9 @@ public class Meter {
     this.setValue((int) val); // update the value
 
     if (this.sound != null){
-
-      float start_loc = this.sound.duration()*(val/this.max_value); // set the start location the sound
-      this.sound.jump(start_loc); // jump to the start location
-      this.sound.play(1, val/this.max_value); // play the sound
+      float loc = this.sound.duration()*( 1 - (val/this.max_value) ) * 0.5; // set the start location the sound
+      this.sound.amp(0.3); // set the volume
+      this.sound.jump(loc); // play the sound
     }
   }
 

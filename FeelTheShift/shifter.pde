@@ -23,6 +23,7 @@
  *      NO BUG PLS
  */
 
+enum GEAR{NEUTRAL, ONE, TWO, THREE, FOUR, FIVE, REVERSE}; // types of meters
 // class the creates and displays the gear shifting mechanisim
 public class GearShifter{
 
@@ -46,6 +47,8 @@ public class GearShifter{
     float ballCreationYPosition = 0.0;
 
     float scale;
+
+    GEAR state; // current state of the gear shifter
     
     PVector penWall = new PVector(0, 0);
     PVector fWall   = new PVector(0, 0);

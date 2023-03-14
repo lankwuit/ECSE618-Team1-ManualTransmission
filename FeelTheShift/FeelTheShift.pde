@@ -45,7 +45,7 @@ int rpm_x = 800;
 int rpm_y = 50;
 int rpm_w = 200;
 int rpm_h = 100;
-int MAX_RPM = 10000;
+int MAX_RPM = 7000;
 
 int speed_x = 800;
 int speed_y = 150;
@@ -53,7 +53,7 @@ int speed_w = 200;
 int speed_h = 100;
 int MAX_SPEED = 160; // km/h
 
-SoundFile engine_rev_sound;
+SoundFile engine_rev_sound, engine_idle_sound;
 
 /* define sensors */
 Meter game_sensor, rpm_sensor, speed_sensor;
@@ -124,10 +124,12 @@ void setup(){
   // widgetOne.device_set_parameters();
 
   // engine sound
-  engine_rev_sound = new SoundFile(this, "../audio/engine_rev.mp3");
+  engine_rev_sound = new SoundFile(this, "../audio/engine_rev_01.mp3");
+  engine_idle_sound = new SoundFile(this, "../audio/engine_idle.mp3");
+  engine_idle_sound.loop(0.75);
 
   //game_sensor = = new Meter(150,150, 200, 100, 10, color(153);
-  rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM); // 
+  rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM); // q
   speed_sensor = new Meter(speed_x, speed_y, speed_w, speed_h, METER_TYPE.SPEED);
 
   rpm_sensor.setRange(0, MAX_RPM);
