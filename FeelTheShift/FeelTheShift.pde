@@ -125,8 +125,8 @@ void setup(){
 
   // engine sound
   engine_rev_sound = new SoundFile(this, "../audio/engine_rev_01.mp3");
-  engine_idle_sound = new SoundFile(this, "../audio/engine_idle.mp3");
-  engine_idle_sound.loop(0.75);
+  engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
+  engine_idle_sound.loop();
 
   //game_sensor = = new Meter(150,150, 200, 100, 10, color(153);
   rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM); // q
