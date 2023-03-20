@@ -23,7 +23,7 @@
  *      NO BUG PLS
  */
 
-enum GEAR{NEUTRAL, ONE, TWO, THREE, FOUR, FIVE, REVERSE}; // types of meters
+enum GEAR{REVERSE, NEUTRAL, ONE, TWO, THREE, FOUR, FIVE}; // types of meters
 // class the creates and displays the gear shifting mechanisim
 public class GearShifter{
 
@@ -42,13 +42,15 @@ public class GearShifter{
     float yaa = 1 - ya;
     float ybb = 1 - yb;
     
-    float kpwall = 1000;
+    float kpwall = 1000*10;
     float initial_offset = 0.0;
     float ballCreationYPosition = 0.0;
 
     float scale;
 
-    GEAR state; // current state of the gear shifter
+    GEAR gear = GEAR.NEUTRAL; // current state of the gear shifter
+    GEAR prev_gear = GEAR.NEUTRAL; // previous state of the gear shifter
+    boolean clutch = false; // clutch is pressed or not
     
     PVector penWall = new PVector(0, 0);
     PVector fWall   = new PVector(0, 0);
@@ -155,18 +157,39 @@ public class GearShifter{
         line(this.w * topCoords[0], this.h * topCoords[1], this.w * bottomCoords[0], this.h * bottomCoords[1]);
         line(this.w * topCoords[topCoords.length - 2], this.h * topCoords[topCoords.length - 1], this.w * bottomCoords[bottomCoords.length - 2], this.h * bottomCoords[bottomCoords.length - 1]);
 
+
+
+        // TODO Remove the following lines since it is just for debugging
         // highlighting the interesection points of the pattern
         fill(255, 0, 0);
         noStroke();
         ellipseMode(CENTER);
-        for (int i = 0; i < topCoords.length; i += 2) { // show the coordinate points chosen in red
-            ellipse(this.w * topCoords[i], this.h * topCoords[i + 1], 3, 3);
-        }
+        // for (int i = 0; i < topCoords.length; i += 2) { // show the coordinate points chosen in red
+        //     ellipse(this.w * topCoords[i], this.h * topCoords[i + 1], 3, 3);
+        // }
 
-        fill(0, 255, 0);
-        for (int i = bottomCoords.length - 2; i >= 0; i -= 2) { // // show the coordinate points chosen in green
-            ellipse(this.w * bottomCoords[i], this.h * bottomCoords[i + 1], 3, 3);
-        }
+        // fill(0, 255, 0);
+        // for (int i = bottomCoords.length - 2; i >= 0; i -= 2) { // // show the coordinate points chosen in green
+        //     ellipse(this.w * bottomCoords[i], this.h * bottomCoords[i + 1], 3, 3);
+        // }
+
+        // draw the gear numbers on the pattern
+        float height_scale = 0.1;
+        fill(0);
+        textSize(40);
+        textAlign(CENTER, CENTER);
+
+        text("N", this.w/2, this.h/2);
+
+        text("1", this.w * topCoords[2], this.h * topCoords[3] + this.h *  height_scale );
+        text("2", this.w * bottomCoords[2], this.h * bottomCoords[3] - this.h *  height_scale  );
+
+        text("3", this.w * topCoords[14], this.h * topCoords[15] + this.h *  height_scale );
+        text("4", this.w * bottomCoords[14], this.h * bottomCoords[15] - this.h *  height_scale );
+
+        text("5", this.w * topCoords[topCoords.length - 4], this.h * topCoords[topCoords.length - 4 + 1] + this.h *  height_scale );
+        text("R", this.w * bottomCoords[bottomCoords.length - 4], this.h * bottomCoords[bottomCoords.length - 4 + 1] - this.h *  height_scale );
+
 
         
     }
@@ -240,7 +263,7 @@ public class GearShifter{
 
         /*change coordinate of the posEE to the actual coordinate that we are using */
         PVector posReltoCustomSpace = new PVector(0, 0);
-        posReltoCustomSpace.set(posEE.x+w/2/scale, posEE.y-yinitial);
+        posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
 
         //check if the initial position tuning has passed
         //if (!initialFlag){
@@ -310,8 +333,8 @@ public class GearShifter{
         temp2 = penWall.y;
         penWall.set(temp,temp2);
 
-        println(posReltoCustomSpace);
-        println(penWall);
+        // println(posReltoCustomSpace);
+        // println(penWall);
         //finding force
         fWall = fWall.add(penWall.mult(-kpwall));  
         
@@ -320,12 +343,97 @@ public class GearShifter{
         /* end haptic wall force calculation */
     }
 
-    PVector device_to_graphics(PVector deviceFrame){
+
+    
+
+    public GEAR getGear(PVector posEE){
+
+        /*change coordinate of the posEE to the actual coordinate that we are using */
+        PVector posReltoCustomSpace = new PVector(0, 0);
+        posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
+
+        // check the location of the handle to determine the gear
+        GEAR cur_gear;
+        if(posReltoCustomSpace.x < this.w * this.topCoords[8] / this.scale){ // E in our sketch
+            // left half of the shifter
+            if(posReltoCustomSpace.y < this.h * this.topCoords[7] / this.scale){ // D in our sketch
+                // top half of the shifter
+                cur_gear = GEAR.ONE;
+            }
+            else if(posReltoCustomSpace.y > this.h *this.bottomCoords[7] / this.scale){ // D in our sketch
+                // bottom half of the shifter
+                cur_gear = GEAR.TWO;
+            }else{
+                // center of the shifter
+                cur_gear = GEAR.NEUTRAL;
+            }
+
+        }
+        else if (posReltoCustomSpace.x > this.w * this.topCoords[20] / this.scale){ // K in our sketch
+            // right half of the shifter
+            if(posReltoCustomSpace.y < this.h * this.topCoords[19] / this.scale){ // J in our sketch
+                // top half of the shifter
+                cur_gear = GEAR.FIVE;
+            }
+            else if(posReltoCustomSpace.y > this.h * this.bottomCoords[19] / this.scale){ // J in our sketch
+                // bottom half of the shifter
+                cur_gear = GEAR.REVERSE;
+            }else{
+                // center of the shifter
+                cur_gear = GEAR.NEUTRAL;
+            }
+
+        }
+        else {
+            // center of the shifter
+             if(posReltoCustomSpace.y < this.h * this.topCoords[19] / this.scale ){ // J in our sketch
+                // top half of the shifter
+                cur_gear = GEAR.THREE;
+            }
+            else if(posReltoCustomSpace.y > this.h * this.bottomCoords[19] / this.scale){ // J in our sketch
+                // bottom half of the shifter
+                cur_gear = GEAR.FOUR;
+            }else{
+                // center of the shifter
+                cur_gear = GEAR.NEUTRAL;
+            }
+        }
+        return cur_gear;
+    }
+
+    public boolean setGear(GEAR g){
+        if(this.clutch == false) // clutch is not engaged
+            return false; // cannot change gear
+
+        //this.neutral();
+        this.changeGear(g);
+        return true; // gear changed
+        // if(g - this.gear > 0)
+        //     this.accelerate();
+    }
+
+    public void setClutch(boolean clutch){
+        this.clutch = clutch;
+    }
+
+    private void neutral(){
+        this.gear = GEAR.NEUTRAL;
+    }
+
+    private void changeGear(GEAR g){
+        this.gear = g;
+    }
+
+    private boolean gearingUp(){
+        return true;
+    }
+
+    public PVector device_to_graphics(PVector deviceFrame){
         return deviceFrame.set(-deviceFrame.x, deviceFrame.y);
     }
 
 
-    PVector graphics_to_device(PVector graphicsFrame){
+    public PVector graphics_to_device(PVector graphicsFrame){
         return graphicsFrame.set(-graphicsFrame.x, graphicsFrame.y);
     }
     /**

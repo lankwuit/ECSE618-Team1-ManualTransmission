@@ -41,13 +41,13 @@ PImage brakeImg, clutchImg, gasImg;
 SoundFile pedal_sound;
 
 /* rpm & speed sensor size definitons in pixels */
-int rpm_x = 800;
+int rpm_x = 50;
 int rpm_y = 50;
 int rpm_w = 200;
 int rpm_h = 100;
 int MAX_RPM = 7000;
 
-int speed_x = 800;
+int speed_x = rpm_x;
 int speed_y = 150;
 int speed_w = 200;
 int speed_h = 100;
@@ -107,24 +107,24 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-  // haplyBoard          = new Board(this, "COM9", 0);
-  // widgetOne           = new Device(widgetOneID, haplyBoard);
-  // pantograph          = new Pantograph();
+  haplyBoard          = new Board(this, "/dev/ttyACM0", 0);
+  widgetOne           = new Device(widgetOneID, haplyBoard);
+  pantograph          = new Pantograph();
   
-  // widgetOne.set_mechanism(pantograph);
+  widgetOne.set_mechanism(pantograph);
   
-  // //start: added to fix inverse motion of the ball
-  // widgetOne.add_actuator(1, CCW, 2);
-  // widgetOne.add_actuator(2, CW, 1);
+  //start: added to fix inverse motion of the ball
+  widgetOne.add_actuator(1, CCW, 2);
+  widgetOne.add_actuator(2, CW, 1);
 
-  // widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-  // widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-  // widgetOne.device_set_parameters();
+  widgetOne.device_set_parameters();
 
   // engine sound
-  engine_rev_sound = new SoundFile(this, "../audio/engine_rev_01.mp3");
+  engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
   engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
   engine_idle_sound.loop();
 
@@ -132,7 +132,7 @@ void setup(){
   rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM); // q
   speed_sensor = new Meter(speed_x, speed_y, speed_w, speed_h, METER_TYPE.SPEED);
 
-  rpm_sensor.setRange(0, MAX_RPM);
+  rpm_sensor.setRange(1000, MAX_RPM);
   speed_sensor.setRange(0, MAX_SPEED);
 
   rpm_sensor.setSound(engine_rev_sound);
@@ -195,26 +195,24 @@ void draw(){
     mechanisim.draw();
     mechanisim.draw_ee(pos_ee.x, pos_ee.y);
 
+    // check the gear
+    GEAR cur_gear = mechanisim.getGear(pos_ee);
+    println(cur_gear);
+
     // decrase rpm value every 10 frames
-    if(frameCount % 10 == 0){
+    if(frameCount % 20 == 0){
       rpm_sensor.decreaseValue();
     }
-
-    // current_time = millis();
-    // if(current_time - last_time > 1000){
-    //   last_time = current_time;
-    //   rpm_value+=100;
-    //   rpm_sensor.setValue(nf(rpm_value, 4,0));
-    //   speed_sensor.setValue(nf(rpm_value/10.0, 3, 0));
-    // }
   }
 }
 /* end draw section ****************************************************************************************************/
 
 void keyPressed(){
   
-  if(key == 'a' || key == 'A')
+  if(key == 'a' || key == 'A'){
     clutch.press();
+    mechanisim.setClutch(true); // engage the clutch
+  }
   if(key == 's' || key == 'S')
     brake.press();
   if(key == 'd' || key == 'D'){
@@ -225,8 +223,10 @@ void keyPressed(){
 
 void keyReleased(){
   
-  if(key == 'a' || key == 'A')
+  if(key == 'a' || key == 'A'){
     clutch.release();
+    mechanisim.setClutch(false); // disengage the clutch
+  }
   if(key == 's' || key == 'S')
     brake.release();
   if(key == 'd' || key == 'D'){
@@ -242,23 +242,23 @@ class SimulationThread implements Runnable{
     
     rendering_force = true;
     
-    // if(haplyBoard.data_available()){
-    //   /* GET END-EFFECTOR STATE (TASK SPACE) */
-    //   widgetOne.device_read_data();
+    if(haplyBoard.data_available()){
+      /* GET END-EFFECTOR STATE (TASK SPACE) */
+      widgetOne.device_read_data();
     
-    //   angles.set(widgetOne.get_device_angles()); 
-    //   pos_ee.set(widgetOne.get_device_position(angles.array()));
-    //   pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
+      angles.set(widgetOne.get_device_angles()); 
+      pos_ee.set(widgetOne.get_device_position(angles.array()));
+      pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
 
 
-    //   // TODO add relavent force feedback codes right here
-    //   mechanisim.forcerender(pos_ee);
+      // TODO add relavent force feedback codes right here
+      mechanisim.forcerender(pos_ee);
 
-    //   //TODO end
+      //TODO end
 
-    // }    
-    // torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
-    // widgetOne.device_write_torques();
+    }    
+    torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
+    widgetOne.device_write_torques();
   
   
     rendering_force = false;
