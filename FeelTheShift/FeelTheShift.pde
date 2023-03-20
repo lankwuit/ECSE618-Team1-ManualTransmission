@@ -197,10 +197,20 @@ void draw(){
 
     // check the gear
     GEAR cur_gear = mechanisim.getGear(pos_ee);
-    println(cur_gear);
+    if(mechanisim.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes
+      boolean isGoodShift = mechanisim.setGear(cur_gear);
+
+      if(isGoodShift){
+        // good shift
+        println("Good shift! Current gear: " + cur_gear);
+      }else{
+        // bad shift
+        println("Bad shift!");
+      }
+    }
 
     // decrase rpm value every 10 frames
-    if(frameCount % 20 == 0){
+    if(frameCount % 10 == 0){
       rpm_sensor.decreaseValue();
     }
   }

@@ -47,8 +47,6 @@ public class GearShifter{
     float ballCreationYPosition = 0.0;
 
     float scale;
-
-    GEAR gear = GEAR.NEUTRAL; // current state of the gear shifter
     GEAR prev_gear = GEAR.NEUTRAL; // previous state of the gear shifter
     boolean clutch = false; // clutch is pressed or not
     
@@ -404,28 +402,16 @@ public class GearShifter{
     public boolean setGear(GEAR g){
         if(this.clutch == false) // clutch is not engaged
             return false; // cannot change gear
-
-        //this.neutral();
-        this.changeGear(g);
+        this.prev_gear = g;
         return true; // gear changed
-        // if(g - this.gear > 0)
-        //     this.accelerate();
     }
 
     public void setClutch(boolean clutch){
         this.clutch = clutch;
     }
 
-    private void neutral(){
-        this.gear = GEAR.NEUTRAL;
-    }
-
-    private void changeGear(GEAR g){
-        this.gear = g;
-    }
-
-    private boolean gearingUp(){
-        return true;
+    public GEAR getPrevGear(){
+        return this.prev_gear; // get the last gear that was set
     }
 
     public PVector device_to_graphics(PVector deviceFrame){
