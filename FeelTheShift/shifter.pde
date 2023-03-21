@@ -55,6 +55,25 @@ public class GearShifter{
     PShape endEffector;
     float rEE = 0.014;//in terms of meter
 
+    // regarding to the differentiator
+    // used to compute the time difference between two loops for differentiation
+    long oldtime = 0;
+    //for exponential filter on differentiation
+    float diffx = 0;
+    float diffy = 0;
+    float buffx = 0;
+    float buffy = 0;
+    float smoothing = 0.80;
+    // checking everything run in less than 1ms
+    long timetaken= 0;
+
+    // set loop time in usec (note from Antoine, 500 is about the limit of my computer max CPU usage)
+    int looptime = 500;
+    
+    // for D
+    float oldex = 0.0f;
+    float oldey = 0.0f;
+
 
     // the coordinates of curve to draw; must have 2n enteries so that (x/w,y/h) = topCoords[i], topCoords[i+1]
     // top left to top right
@@ -200,32 +219,27 @@ public class GearShifter{
         topCoords[2], topCoords[1], //below B
         topCoords[14], topCoords[13], //below H
         topCoords[26], topCoords[25], //below N
-        bottomCoords[2], bottomCoords[1], //below B
-        bottomCoords[14], bottomCoords[13], //below H
-        bottomCoords[26], bottomCoords[25] //below N
+        bottomCoords[2], bottomCoords[1], //above B
+        bottomCoords[14], bottomCoords[13], //above H
+        bottomCoords[26], bottomCoords[25] //above N
     };
-    /**
-     * @description: 
-     //TODO finish this up
-     * @return {*}
-     */
-    // public void initialHandler(PVector pos){
-    //     while(abs(pos.y - 0.5)<0.1){
-    //         float P=0.2;
-    //         float I=0.06;
-    //         float D=1.0;
-            
-    //         float dist_X = x_m-scale*pos.x;
-    //         cumerrorx += dist_X*timedif*0.000000001;
-    //         float dist_Y = y_m-scale*pos.y;
-            
-    //     cumerrory += dist_Y*timedif*0.000000001;
-    //         fEE.x = constrain(P*dist_X,-4,4) + constrain(I*cumerrorx,-4,4) + constrain(D*diffx,-8,8);
-    //         fEE.y = constrain(P*dist_Y,-4,4) + constrain(I*cumerrory,-4,4) + constrain(D*diffy,-8,8); 
-            
-    //     }
+    
+    PVector curveforcerender(PVector posReltoCustomSpace, float centerx, float centery){
+        //这个方程在已经进入那么所在区之后进行条件判断
+        //什么时候turned on呢， 判断euclidean distance 在圆弧范围之内的时候
+        PVector temp = new PVector(centerx*w/scale,centery*h/scale);
+        float distance =PVector.dist(posReltoCustomSpace,temp);
+        float penamount = rEE +distance - slotA_W;
+        if(PVector.dist(posReltoCustomSpace,temp)<rEE){ // see if this is the right curve that is near the right ee
+            PVector angle=PVector.sub(posReltoCustomSpace,temp); // for angle calculation
+            println(angle.normalize());
+            temp.set(penamount* angle.normalize().x, penamount*angle.normalize().y);
+        }else{
+            temp.set(0,0);
+        }
+        return temp;
 
-    // }
+    }
 
     public void forcerender(PVector posEE){
         // Start definition of wall, look into vertical walls only first
@@ -249,9 +263,22 @@ public class GearShifter{
         float temp = 0.0, temp2=0.0;
         //force feedback for all vertical walls
         if (topCoords[3]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < topCoords[1]*h/scale){
-            //TODO adding the half circle forceback here
-            penWall.set(0,0);
-        }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< topCoords[7]*h/scale){
+            if(topCoords[0]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < topCoords[8]*w/scale){
+                penWall = curveforcerender(posReltoCustomSpace,curvecenter[0],curvecenter[1]);
+            }else if(topCoords[8]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < topCoords[20]*w/scale){
+                penWall = curveforcerender(posReltoCustomSpace,curvecenter[2],curvecenter[3]);
+            }else if(topCoords[20]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < topCoords[28]*w/scale){
+                penWall = curveforcerender(posReltoCustomSpace,curvecenter[4],curvecenter[5]);
+            };
+        }else if (bottomCoords[1]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < bottomCoords[3]*h/scale){
+            if(bottomCoords[0]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < bottomCoords[8]*w/scale){
+                penWall = curveforcerender(posReltoCustomSpace,curvecenter[6],curvecenter[7]);
+            }else if(bottomCoords[8]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < bottomCoords[20]*w/scale){
+                penWall = curveforcerender(posReltoCustomSpace,curvecenter[8],curvecenter[9]);
+            }else if(bottomCoords[20]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < bottomCoords[28]*w/scale){
+                penWall = curveforcerender(posReltoCustomSpace,curvecenter[10],curvecenter[11]);
+            };
+            }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< topCoords[7]*h/scale){
             penWall.set(
                 abs(topCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
                     abs(topCoords[4]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[4]*w/scale>posReltoCustomSpace.x ? (topCoords[4]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[4]*w/scale-posReltoCustomSpace.x+rEE)):(
@@ -306,15 +333,35 @@ public class GearShifter{
         }
         temp2 = penWall.y;
         penWall.set(temp,temp2);
-
-        println(posReltoCustomSpace);
         println(penWall);
         //finding force
         fWall = fWall.add(penWall.mult(-kpwall));  
         
+        
         fEE = (fWall.copy()).mult(-1);
         fEE.set(graphics_to_device(fEE));
         /* end haptic wall force calculation */
+    }
+
+    void forcePDcompute(PVector posEE){
+        long timedif = System.nanoTime()-oldtime;
+
+        float dist_X = x_m-xE;
+        cumerrorx += dist_X*timedif*0.000000001;
+        float dist_Y = y_m-yE;
+        cumerrory += dist_Y*timedif*0.000000001;
+        
+        if(timedif > 0) {
+            buffx = (dist_X-oldex)/timedif*1000*1000;
+            buffy = (dist_Y-oldey)/timedif*1000*1000;            
+
+            diffx = smoothing*diffx + (1.0-smoothing)*buffx;
+            diffy = smoothing*diffy + (1.0-smoothing)*buffy;
+            oldex = dist_X;
+            oldey = dist_Y;
+            oldtime=System.nanoTime();
+        };
+
     }
 
     PVector device_to_graphics(PVector deviceFrame){
