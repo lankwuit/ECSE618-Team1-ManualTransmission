@@ -41,7 +41,10 @@ public class GearShifter{
     float yaa = 1 - ya;
     float ybb = 1 - yb;
     
-    float kpwall = 1000;
+    float kpwall = 700;
+    float kiwall = 500;
+    float kismooth =300;
+    float curvefactor = 0.06;
     float initial_offset = 0.0;
     float ballCreationYPosition = 0.0;
 
@@ -54,15 +57,24 @@ public class GearShifter{
     //  this is the endeffector part
     PShape endEffector;
     float rEE = 0.014;//in terms of meter
+    float curveREEallowance = 0.004;
 
     // regarding to the differentiator
     // used to compute the time difference between two loops for differentiation
     long oldtime = 0;
+    long oldtimew = 0;
     //for exponential filter on differentiation
+    PVector velWall = new PVector(0, 0);
+    PVector smoothwall = new PVector(0, 0);
+    float diffwx = 0;
+    float diffwy = 0;
+    float buffwx = 0;
+    float buffwy = 0;
     float diffx = 0;
     float diffy = 0;
     float buffx = 0;
     float buffy = 0;
+    float smoothingw = 0.40;
     float smoothing = 0.80;
     // checking everything run in less than 1ms
     long timetaken= 0;
@@ -71,6 +83,8 @@ public class GearShifter{
     int looptime = 500;
     
     // for D
+    float oldexw = 0.0f;
+    float oldeyw = 0.0f;
     float oldex = 0.0f;
     float oldey = 0.0f;
 
@@ -229,11 +243,10 @@ public class GearShifter{
         //什么时候turned on呢， 判断euclidean distance 在圆弧范围之内的时候
         PVector temp = new PVector(centerx*w/scale,centery*h/scale);
         float distance =PVector.dist(posReltoCustomSpace,temp);
-        float penamount = rEE +distance - slotA_W;
+        float penamount = rEE-curveREEallowance +distance - slotA_W;
         if(PVector.dist(posReltoCustomSpace,temp)<rEE){ // see if this is the right curve that is near the right ee
             PVector angle=PVector.sub(posReltoCustomSpace,temp); // for angle calculation
-            println(angle.normalize());
-            temp.set(penamount* angle.normalize().x, penamount*angle.normalize().y);
+            temp.set(penamount* curvefactor*angle.normalize().x, penamount*curvefactor*angle.normalize().y);
         }else{
             temp.set(0,0);
         }
@@ -320,36 +333,57 @@ public class GearShifter{
         //for DEF, JKL etc.
         if(topCoords[6]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[10]*w/scale){
             penWall.set(0,
-                abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale>posReltoCustomSpace.y ? (topCoords[7]*h/scale-posReltoCustomSpace.y-rEE):(topCoords[7]*h/scale-posReltoCustomSpace.y+rEE)):(
-                    abs(bottomCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[7]*h/scale>posReltoCustomSpace.y ? (bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[7]*h/scale-posReltoCustomSpace.y+rEE)):0
+                abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale>posReltoCustomSpace.y ? (topCoords[7]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[7]*h/scale-posReltoCustomSpace.y+rEE)):(
+                    abs(bottomCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[7]*h/scale>posReltoCustomSpace.y ? (bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE)):0
                 )
             );
         }else if(topCoords[18]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[22]*w/scale){
             penWall.set(0,
-                abs(topCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[19]*h/scale>posReltoCustomSpace.y ? (topCoords[19]*h/scale-posReltoCustomSpace.y-rEE):(topCoords[19]*h/scale-posReltoCustomSpace.y+rEE)):(
-                    abs(bottomCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[19]*h/scale>posReltoCustomSpace.y ? (bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[19]*h/scale-posReltoCustomSpace.y+rEE)):0
+                abs(topCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[19]*h/scale>posReltoCustomSpace.y ? (topCoords[19]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[19]*h/scale-posReltoCustomSpace.y+rEE)):(
+                    abs(bottomCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[19]*h/scale>posReltoCustomSpace.y ? (bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE)):0
                 )
             );
         }
         temp2 = penWall.y;
         penWall.set(temp,temp2);
-        println(penWall);
         //finding force
+        forcePDcompute();
+        PDSmoothing(posEE);
         fWall = fWall.add(penWall.mult(-kpwall));  
-        
+        fWall = fWall.add(velWall.mult(kiwall));  
+        fWall = fWall.add(smoothwall.mult(-kismooth));  
+        println(fWall);
         
         fEE = (fWall.copy()).mult(-1);
         fEE.set(graphics_to_device(fEE));
         /* end haptic wall force calculation */
     }
 
-    void forcePDcompute(PVector posEE){
+    private void forcePDcompute(){
+        long timedif = System.nanoTime()-oldtimew;
+
+        float dist_X = penWall.x;
+        float dist_Y = penWall.y;
+        
+        if(timedif > 0) {
+            buffwx = (dist_X-oldexw)/timedif*1000*1000;
+            buffwy = (dist_Y-oldeyw)/timedif*1000*1000;            
+
+            diffwx = smoothing*diffwx + (1.0-smoothing)*buffwx;
+            diffwy = smoothing*diffwy + (1.0-smoothing)*buffwy;
+            oldexw = dist_X;
+            oldeyw = dist_Y;
+            oldtimew=System.nanoTime();
+        };
+        velWall.set(diffwx,diffwy);
+
+    }
+
+    private void PDSmoothing(PVector posEE){
         long timedif = System.nanoTime()-oldtime;
 
-        float dist_X = x_m-xE;
-        cumerrorx += dist_X*timedif*0.000000001;
-        float dist_Y = y_m-yE;
-        cumerrory += dist_Y*timedif*0.000000001;
+        float dist_X = posEE.x;
+        float dist_Y = posEE.y;
         
         if(timedif > 0) {
             buffx = (dist_X-oldex)/timedif*1000*1000;
@@ -361,6 +395,7 @@ public class GearShifter{
             oldey = dist_Y;
             oldtime=System.nanoTime();
         };
+        smoothwall.set(diffx,diffy);
 
     }
 
