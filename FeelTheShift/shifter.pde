@@ -41,12 +41,17 @@ public class GearShifter{
     float yaa = 1 - ya;
     float ybb = 1 - yb;
     
-    float kpwall = 700;
-    float kiwall = 500;
-    float kismooth =300;
-    float curvefactor = 0.06;
+    float kpwall = 800;
+    float kiwall = 200;
+    float kismooth= 700;
+    float kdwall = 650;
+    float curvefactor = 0.05;
+    
     float initial_offset = 0.0;
     float ballCreationYPosition = 0.0;
+    float cumerrorwx = 0.0;
+    float cumerrorwy = 0.0;
+    PVector cumpenWall = new PVector(0,0);
 
     float scale;
     
@@ -56,7 +61,7 @@ public class GearShifter{
 
     //  this is the endeffector part
     PShape endEffector;
-    float rEE = 0.014;//in terms of meter
+    float rEE = 0.012;//in terms of meter
     float curveREEallowance = 0.004;
 
     // regarding to the differentiator
@@ -74,7 +79,7 @@ public class GearShifter{
     float diffy = 0;
     float buffx = 0;
     float buffy = 0;
-    float smoothingw = 0.40;
+    float smoothingw = 0.90;
     float smoothing = 0.80;
     // checking everything run in less than 1ms
     long timetaken= 0;
@@ -283,6 +288,9 @@ public class GearShifter{
             }else if(topCoords[20]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < topCoords[28]*w/scale){
                 penWall = curveforcerender(posReltoCustomSpace,curvecenter[4],curvecenter[5]);
             };
+              
+            fWall = fWall.add(velWall.mult(kdwall));  
+            fWall = fWall.add(cumpenWall.mult(-kiwall));
         }else if (bottomCoords[1]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < bottomCoords[3]*h/scale){
             if(bottomCoords[0]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < bottomCoords[8]*w/scale){
                 penWall = curveforcerender(posReltoCustomSpace,curvecenter[6],curvecenter[7]);
@@ -291,7 +299,10 @@ public class GearShifter{
             }else if(bottomCoords[20]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < bottomCoords[28]*w/scale){
                 penWall = curveforcerender(posReltoCustomSpace,curvecenter[10],curvecenter[11]);
             };
-            }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< topCoords[7]*h/scale){
+        
+            fWall = fWall.add(velWall.mult(kdwall));  
+            fWall = fWall.add(cumpenWall.mult(-kiwall));
+        }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< topCoords[7]*h/scale){
             penWall.set(
                 abs(topCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
                     abs(topCoords[4]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[4]*w/scale>posReltoCustomSpace.x ? (topCoords[4]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[4]*w/scale-posReltoCustomSpace.x+rEE)):(
@@ -305,12 +316,18 @@ public class GearShifter{
                     )
                 )
             ,0);
+            cumpenWall.set(0,0);
+            cumerrorwx=0.0;
+            cumerrorwy=0.0;
         }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[7]*h/scale){
             penWall.set(
                 abs(topCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
                                     abs(topCoords[28]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[28]*w/scale>posReltoCustomSpace.x ? (topCoords[28]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[28]*w/scale-posReltoCustomSpace.x+rEE)):0
                                 )
             ,0);
+            cumpenWall.set(0,0);
+            cumerrorwx=0.0;
+            cumerrorwy=0.0;
         }else if(bottomCoords[7]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[1]*h/scale){
             penWall.set(
                 abs(bottomCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[0]*w/scale>posReltoCustomSpace.x ? (bottomCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
@@ -324,7 +341,10 @@ public class GearShifter{
                         ) 
                     )
                 )
-            ,0);            
+            ,0);     
+            cumpenWall.set(0,0);    
+            cumerrorwx=0.0;
+            cumerrorwy=0.0;   
         }else{
             penWall.set(0,0);
         }
@@ -344,14 +364,19 @@ public class GearShifter{
                 )
             );
         }
+        //for center zone recovery
+        if(topCoords[9]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[9]*h/scale && topCoords[0]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[28]*w/scale){
+            NeutralCentering(posEE);
+        }
+
+
         temp2 = penWall.y;
         penWall.set(temp,temp2);
         //finding force
         forcePDcompute();
         PDSmoothing(posEE);
         fWall = fWall.add(penWall.mult(-kpwall));  
-        fWall = fWall.add(velWall.mult(kiwall));  
-        fWall = fWall.add(smoothwall.mult(-kismooth));  
+        fWall = fWall.add(smoothwall.mult(kismooth));  
         println(fWall);
         
         fEE = (fWall.copy()).mult(-1);
@@ -363,19 +388,22 @@ public class GearShifter{
         long timedif = System.nanoTime()-oldtimew;
 
         float dist_X = penWall.x;
+        cumerrorwx += dist_X*timedif*0.000000001;
         float dist_Y = penWall.y;
+        cumerrorwy += dist_Y*timedif*0.000000001;
         
         if(timedif > 0) {
             buffwx = (dist_X-oldexw)/timedif*1000*1000;
             buffwy = (dist_Y-oldeyw)/timedif*1000*1000;            
 
-            diffwx = smoothing*diffwx + (1.0-smoothing)*buffwx;
-            diffwy = smoothing*diffwy + (1.0-smoothing)*buffwy;
+            diffwx = smoothingw*diffwx + (1.0-smoothingw)*buffwx;
+            diffwy = smoothingw*diffwy + (1.0-smoothingw)*buffwy;
             oldexw = dist_X;
             oldeyw = dist_Y;
             oldtimew=System.nanoTime();
         };
         velWall.set(diffwx,diffwy);
+        cumpenWall.set(cumerrorwx,cumerrorwy);
 
     }
 
@@ -397,6 +425,34 @@ public class GearShifter{
         };
         smoothwall.set(diffx,diffy);
 
+    }
+
+    float[] neutralCenter ={
+        topCoords[14], (topCoords[15]+bottomCoords[15])/2
+    };
+    float neutralRecoveryForce = 2.5;
+
+    private void NeutralCentering(PVector posEE){
+        float dist_X = (posEE.x+w/2/scale) - neutralCenter[0]*w/scale;
+        float dist_Y = (posEE.y-yinitial) - neutralCenter[1]*h/scale;
+        
+        println(dist_X);
+        if(abs(dist_X)>rEE){
+            if(dist_X<0){
+                fWall.add(-neutralRecoveryForce,0);
+            }else{
+                fWall.add(neutralRecoveryForce,0);
+            }
+        }
+        if(abs(dist_Y*h/scale)>0.75*rEE){
+            if(dist_Y<0){
+                fWall.add(0,-neutralRecoveryForce);
+            }else{
+                fWall.add(0,neutralRecoveryForce);
+            }
+
+        }
+        
     }
 
     PVector device_to_graphics(PVector deviceFrame){
