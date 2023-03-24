@@ -58,6 +58,9 @@ public class GearShifter{
     PShape endEffector;
     float rEE = 0.014;//in terms of meter
 
+    // font
+    int font_size = 48;
+    PFont font = createFont("../fonts/ArcadeClassic.ttf", this.font_size, true);
 
     // the coordinates of curve to draw; must have 2n enteries so that (x/w,y/h) = topCoords[i], topCoords[i+1]
     // top left to top right
@@ -116,7 +119,8 @@ public class GearShifter{
   
     public void draw(){
         noFill();
-        stroke(0);
+        stroke(255);
+        strokeWeight(4);  // default is 4
 
         // top half
         for (int i = 0; i < topCoords.length; i += 2) { // draw the curve that is the slots
@@ -160,6 +164,7 @@ public class GearShifter{
         // TODO Remove the following lines since it is just for debugging
         // highlighting the interesection points of the pattern
         fill(255, 0, 0);
+        strokeWeight(4); //back to default
         noStroke();
         ellipseMode(CENTER);
         // for (int i = 0; i < topCoords.length; i += 2) { // show the coordinate points chosen in red
@@ -173,8 +178,8 @@ public class GearShifter{
 
         // draw the gear numbers on the pattern
         float height_scale = 0.1;
-        fill(0);
-        textSize(40);
+        fill(255);
+        textFont(this.font, this.font_size); // specify font
         textAlign(CENTER, CENTER);
 
         text("N", this.w/2, this.h/2);
@@ -188,7 +193,6 @@ public class GearShifter{
         text("5", this.w * topCoords[topCoords.length - 4], this.h * topCoords[topCoords.length - 4 + 1] + this.h *  height_scale );
         text("R", this.w * bottomCoords[bottomCoords.length - 4], this.h * bottomCoords[bottomCoords.length - 4 + 1] - this.h *  height_scale );
 
-
         
     }
 
@@ -197,12 +201,53 @@ public class GearShifter{
      * @return {*}
      */    
     public void draw_ee(float xE, float yE){
+        PVector posEE = new PVector(xE, yE);
         xE = scale * xE;
         yE = scale * yE; // multiplying scale for converting meter scale to pixels
         
+        pushMatrix();
         translate(xE,yE);
         shape(this.endEffector);
+        popMatrix();
         
+        // draw current gear on shifter
+        PVector posReltoCustomSpace = new PVector(0, 0);
+        posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
+        GEAR cur_gear = getGear(posEE);
+
+        if(game_state == 0)
+            cur_gear = GEAR.NEUTRAL;
+
+        fill(255);
+        textFont(this.font, 80); // specify font
+        textAlign(CENTER, CENTER);
+
+        float x = posReltoCustomSpace.x * this.scale;
+        float y = posReltoCustomSpace.y * this.scale;
+
+        switch(cur_gear){
+            case REVERSE:
+                text("R", x, y);
+                break;
+            case NEUTRAL:
+                text("N", x, y);
+                break;
+            case ONE:
+                text("1", x, y);
+                break;
+            case TWO:
+                text("2", x, y);
+                break;
+            case THREE:
+                text("3", x, y);
+                break;
+            case FOUR:
+                text("4", x, y);
+                break;
+            case FIVE:
+                text("5", x, y);
+                break;
+        }
     }
     
 
@@ -217,7 +262,7 @@ public class GearShifter{
         this.endEffector = createShape(ELLIPSE, topCoords[14]*w, ballCreationYPosition, 2*rEE*scale, 2*rEE*scale);
         this.endEffector.setStroke(color(0));
         this.endEffector.setStrokeWeight(5);
-        this.endEffector.setFill(color(255,0,0));
+        this.endEffector.setFill(color(0,0,0));
     }   
     
     float[] curvecenter = {

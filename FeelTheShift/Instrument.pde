@@ -1,6 +1,6 @@
 import processing.sound.*;
 
-enum METER_TYPE{RPM, SPEED, PEDAL, OTHER}; // types of meters
+enum METER_TYPE{RPM, SPEED, PEDAL, BUTTON, TEXT, ICON, OTHER}; // types of meters
 
 // class the creates and displays sensor data
 public class Meter {
@@ -25,10 +25,9 @@ public class Meter {
 
   SoundFile sound = null; // the sound to play when the button is pressed
   
+  // min and max values for value
   int min_value = 0;
   int max_value = 100;
-  int last_press = 0;
-  int press_delay = 1000;
 
   // the type of instrument
   METER_TYPE type;
@@ -42,34 +41,39 @@ public class Meter {
     this.radius = 10;
     this.value = "0";
     this.type = type;
-    this.font_size = 50;
+    this.font_size = 30;
+    this.font = createFont("../fonts/ArcadeClassic.ttf", this.font_size, true);
 
 
     switch (this.type) {
       case RPM:
-        this.font = createFont("Arial", this.font_size, true);
         this.name = "RPM";
         this.setValue(0);
         break;
       case SPEED:
-        this.font = createFont("Arial", this.font_size, true);
-        this.name = "KM/HR";
+        this.name = "KMPH";
         this.setValue(0);
         break;
 
       case PEDAL:
+      case ICON:
         this.show_icon = true;
         break;
 
+      case BUTTON:
+        this.setValue(0);
+
+        this.sensor = createShape(RECT, this.x, this.y, this.w, this.h, this.radius);
+        this.sensor.setFill(color(0));
+        this.sensor.setStroke(true);
+        this.sensor.setStroke(color(0));
+        break;
+
+      case TEXT:
+        this.setValue(0);
+        break;
+
       case OTHER:
-        this.border = createShape(RECT, this.x, this.y, this.w, this.h, this.radius);
-        this.sensor = createShape(RECT, this.x, this.y, this.w/2, this.h/2, this.radius);
-
-        this.border.setFill(color(255));
-        this.border.setStroke(true);
-
-        this.sensor.setFill(color(255));
-        this.sensor.setStroke(false);
         break;
     }
   }
@@ -83,13 +87,34 @@ public class Meter {
       case SPEED:
         this.value = nf(value, 3, 0);
         break;
+      case TEXT:
+        this.value = nf(value, 4, 0);
+        break;
     }
+  }
+
+  public void setFontSize(int size){
+    this.font_size = size;
+  }
+
+  public void setName(String name){
+    this.name = name;
   }
   
   public void setRange(int min, int max) {
     this.min_value = min;
     this.max_value = max;
   }
+
+
+  public void increaseValue(int val){
+    int cur_val = int(this.value);
+    cur_val += val;
+    if (cur_val > this.max_value) // clamp the value to the max value
+        val = this.max_value - 1;
+    this.setValue(cur_val);
+  }
+
 
   public void increaseValue() {
     // increase the value by a 
@@ -106,18 +131,11 @@ public class Meter {
     this.setValue((int) val); // update the value
 
 
-    if (this.sound != null && millis() - last_press > press_delay){
-
+    if (this.sound != null){
         float loc = this.sound.duration()*( val/this.max_value ); // set the start location the sound
-        if(millis() - last_press > press_delay*2)
-          loc = this.sound.duration()*( 0.1 ); // been a while since we pressed so restart from beginning
-        if(val < this.max_value*0.3)
-          loc = this.sound.duration()*( 0.5 ); 
-        
         this.sound.stop();
         this.sound.amp( 0.7 ); // set the volume
         this.sound.jump(loc); // play the sound
-        last_press = millis();
     }
     
 
@@ -156,27 +174,65 @@ public class Meter {
     switch (this.type) {
       case RPM:
       case SPEED:
-        this.drawText(); // draw the text
+        this.drawValue(); // draw the text
         break;
 
-      case OTHER:
-        shape(this.border); // draw border
+      case TEXT:
+        this.drawGameText(); // draw the text
+        break;
+
+      case BUTTON:
         shape(this.sensor); // draw the box
+        this.drawText(); // draw the text
         break;
       
       case PEDAL:
+      case ICON:
         this.drawIcon(); // draw the image, for example a break
+        break;
+
+      case OTHER:
         break;
     }
   }
 
-  private void drawText() {
+  private void drawText(){
     textFont(this.font, this.font_size); // specify font
-    fill(0); // set fill colour for text
-    textAlign(LEFT, CENTER);
-    text(this.value, this.x, this.y); // draw this text in the center of the box
-    textFont(this.font, this.font_size/2); // specify font
-    text(this.name, this.x + this.font_size, this.y + this.font_size);
+    fill(255); // set fill colour for text
+    textAlign(CENTER, CENTER);
+    text(this.name, this.x + this.w/2, this.y + this.h/2);
+  }
+
+  private void drawGameText() {
+    fill(255); // set fill colour for text
+    textFont(this.font, this.font_size); // specify font
+    float name_size = textWidth(this.name);
+    String top_text = "HIGHSCORE";
+    if(!this.name.equals(top_text)){
+      name_size = textWidth(top_text);
+      textAlign(RIGHT, CENTER);
+      text(this.name, this.x + textWidth(top_text), this.y); // draw this text in the center of the box
+    }else{
+      textAlign(LEFT, CENTER);
+      text(this.name, this.x, this.y); // draw this text in the center of the box
+    }
+
+    textAlign(RIGHT, CENTER);
+    textFont(this.font, this.font_size); // specify font
+    text(this.value, this.x + name_size, this.y + this.font_size);
+  }
+
+  private void drawValue() {
+    textFont(this.font, this.font_size); // specify font
+    fill(255); // set fill colour for text
+
+    textAlign(RIGHT, CENTER);
+    float value_size = textWidth("0000");
+    text(this.value, this.x + value_size, this.y); // draw this text in the center of the box
+
+    textAlign(RIGHT, CENTER);
+    textFont(this.font, this.font_size * 0.375); // specify font
+    text(this.name, this.x + value_size, this.y + this.font_size * 0.5);
   }
   
   private void drawIcon(){
