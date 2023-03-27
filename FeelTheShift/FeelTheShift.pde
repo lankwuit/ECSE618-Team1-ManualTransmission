@@ -145,7 +145,7 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-   haplyBoard          = new Board(this, "/dev/ttyACM0", 0);
+   haplyBoard          = new Board(this, "/dev/cu.usbmodem141301", 0);
    widgetOne           = new Device(widgetOneID, haplyBoard);
    pantograph          = new Pantograph();
   
@@ -169,6 +169,7 @@ void setup(){
   engine_start = new SoundFile(this, "../audio/engine-start.wav");
   main_screen_sound = new SoundFile(this, "../audio/main_audio.wav");
   start_screen_sound = new SoundFile(this, "../audio/title_audio.wav");
+  start_screen_sound.amp(0.3);
   start_screen_sound.loop(); // play the sound while in game_state 0
 
 
@@ -348,10 +349,10 @@ void keyPressed(){
       delay((int) (engine_start.duration() * 1000)); // wait for the engine start sound to finish
       start_screen_sound.stop();
       
-      main_screen_sound.amp(0.5);
+      main_screen_sound.amp(0.2);
       main_screen_sound.loop();
-      engine_idle_sound.amp(0.5);
-      engine_idle_sound.loop();
+      //engine_idle_sound.amp(0.5);
+      //sengine_idle_sound.loop();
       //main_screen_sound.loop();
       game_state = 1; // start game
       backgroundGif.loop(); // play the gif

@@ -47,6 +47,11 @@ public class GearShifter{
     float kismooth= 700*10;
     float kdwall = 650*10;
     float curvefactor = 0.05*2;
+
+    float[] neutralCenter ={
+        topCoords[14], (topCoords[15]+bottomCoords[15])/2
+    };
+    float neutralRecoveryForce = 2.5*75; // Bereket : I need to multiply by 75 to make it work
     
     float initial_offset = 0.0;
     float ballCreationYPosition = 0.0;
@@ -486,11 +491,6 @@ public class GearShifter{
         smoothwall.set(diffx,diffy);
 
     }
-
-    float[] neutralCenter ={
-        topCoords[14], (topCoords[15]+bottomCoords[15])/2
-    };
-    float neutralRecoveryForce = 2.5;
 
     private void NeutralCentering(PVector posEE){
         float dist_X = (posEE.x+w/2/scale) - neutralCenter[0]*w/scale;
