@@ -48,9 +48,7 @@ public class GearShifter{
     float kdwall = 650*10;
     float curvefactor = 0.05*2;
 
-    float[] neutralCenter ={
-        topCoords[14], (topCoords[15]+bottomCoords[15])/2
-    };
+
     float neutralRecoveryForce = 2.5*75; // Bereket : I need to multiply by 75 to make it work
     
     float initial_offset = 0.0;
@@ -305,6 +303,10 @@ public class GearShifter{
         bottomCoords[2], bottomCoords[1], //above B
         bottomCoords[14], bottomCoords[13], //above H
         bottomCoords[26], bottomCoords[25] //above N
+    };
+    
+    float[] neutralCenter ={
+        topCoords[14], (topCoords[15]+bottomCoords[15])/2
     };
     
     PVector curveforcerender(PVector posReltoCustomSpace, float centerx, float centery){
