@@ -42,11 +42,11 @@ public class GearShifter{
     float yaa = 1 - ya;
     float ybb = 1 - yb;
     
-    float kpwall = 800;
-    float kiwall = 200;
-    float kismooth= 700;
-    float kdwall = 650;
-    float curvefactor = 0.05;
+    float kpwall = 800*10; // Bereket: I need to multiply by 10 to make it work
+    float kiwall = 200*10;
+    float kismooth= 700*10;
+    float kdwall = 650*10;
+    float curvefactor = 0.05*2;
     
     float initial_offset = 0.0;
     float ballCreationYPosition = 0.0;
@@ -201,18 +201,8 @@ public class GearShifter{
 
         // TODO Remove the following lines since it is just for debugging
         // highlighting the interesection points of the pattern
-        fill(255, 0, 0);
         strokeWeight(4); //back to default
-        noStroke();
         ellipseMode(CENTER);
-        // for (int i = 0; i < topCoords.length; i += 2) { // show the coordinate points chosen in red
-        //     ellipse(this.w * topCoords[i], this.h * topCoords[i + 1], 3, 3);
-        // }
-
-        // fill(0, 255, 0);
-        // for (int i = bottomCoords.length - 2; i >= 0; i -= 2) { // // show the coordinate points chosen in green
-        //     ellipse(this.w * bottomCoords[i], this.h * bottomCoords[i + 1], 3, 3);
-        // }
 
         // draw the gear numbers on the pattern
         float height_scale = 0.1;

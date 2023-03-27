@@ -305,7 +305,7 @@ void draw(){
     }
 
     // decrase rpm value every 10 frames
-    if(frameCount % 10 == 0){
+    if(frameCount % 2 == 0){
       rpm_sensor.decreaseValue();
     }
   }else if(rendering_force == false && game_state == 0){
