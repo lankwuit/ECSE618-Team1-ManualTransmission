@@ -86,6 +86,7 @@ PImage up_arrow_img, down_arrow_img;
 
 
 SoundFile engine_rev_sound, engine_idle_sound;
+SoundFile engine_start, start_screen_sound, main_screen_sound;
 
 /* define sensors */
 Meter high_score_text, score_text, time_text, rpm_sensor, speed_sensor;
@@ -145,26 +146,32 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-  haplyBoard          = new Board(this, "/dev/cu.usbmodem141401", 0);
-  widgetOne           = new Device(widgetOneID, haplyBoard);
-  pantograph          = new Pantograph();
+  // haplyBoard          = new Board(this, "/dev/cu.usbmodem141401", 0);
+  // widgetOne           = new Device(widgetOneID, haplyBoard);
+  // pantograph          = new Pantograph();
   
-  widgetOne.set_mechanism(pantograph);
+  // widgetOne.set_mechanism(pantograph);
   
-  //start: added to fix inverse motion of the ball
-  widgetOne.add_actuator(1, CCW, 2);
-  widgetOne.add_actuator(2, CW, 1);
+  // //start: added to fix inverse motion of the ball
+  // widgetOne.add_actuator(1, CCW, 2);
+  // widgetOne.add_actuator(2, CW, 1);
 
-  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-  widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  // widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  // widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-  widgetOne.device_set_parameters();
+  // widgetOne.device_set_parameters();
 
   // engine sound
   engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
   engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
-  engine_idle_sound.loop();
+  //engine_idle_sound.loop();
+
+  engine_start = new SoundFile(this, "../audio/engine-start.mp3");
+  main_screen_sound = new SoundFile(this, "../audio/[main] Teknoaxe - Up For a Race.mp3");
+  start_screen_sound = new SoundFile(this, "../audio/[title] (Jeremy Korpas - Sour Rock.).mp3");
+  start_screen_sound.loop(); // play the sound while in game_state 0
+
 
   // game text
   high_score_text = new Meter(game_text_x, game_text_y, rpm_w, rpm_h, METER_TYPE.TEXT);
@@ -337,7 +344,18 @@ void keyPressed(){
   }
 
   if(key == 'x' || key == 'X'){
-    game_state = 1; // start game
+    if(game_state == 0){
+      engine_start.play();
+      delay((int) (engine_start.duration() * 1000)); // wait for the engine start sound to finish
+      start_screen_sound.stop();
+      
+      main_screen_sound.amp(0.5);
+      main_screen_sound.loop();
+      engine_idle_sound.amp(0.5);
+      engine_idle_sound.loop();
+      //main_screen_sound.loop();
+      game_state = 1; // start game
+    }
   }
 
 
@@ -367,24 +385,24 @@ class SimulationThread implements Runnable{
     
     rendering_force = true;
     
-    if(haplyBoard.data_available()){
-      /* GET END-EFFECTOR STATE (TASK SPACE) */
-      widgetOne.device_read_data();
+    // if(haplyBoard.data_available()){
+    //   /* GET END-EFFECTOR STATE (TASK SPACE) */
+    //   widgetOne.device_read_data();
     
-      angles.set(widgetOne.get_device_angles()); 
-      pos_ee.set(widgetOne.get_device_position(angles.array()));
-      pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
+    //   angles.set(widgetOne.get_device_angles()); 
+    //   pos_ee.set(widgetOne.get_device_position(angles.array()));
+    //   pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
 
 
-      // TODO add relavent force feedback codes right here
-      if(game_state == 1)
-        mechanisim.forcerender(pos_ee);
+    //   // TODO add relavent force feedback codes right here
+    //   if(game_state == 1)
+    //     mechanisim.forcerender(pos_ee);
 
-      //TODO end
+    //   //TODO end
 
-    }    
-    torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
-    widgetOne.device_write_torques();
+    // }    
+    // torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
+    // widgetOne.device_write_torques();
   
   
     rendering_force = false;
