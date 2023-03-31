@@ -23,7 +23,17 @@
  *      NO BUG PLS
  */
 
+import java.util.Map;
+
+
 enum GEAR{REVERSE, NEUTRAL, ONE, TWO, THREE, FOUR, FIVE}; // types of meters
+
+HashMap<String,Integer> min_rpms = new HashMap<String,Integer>();
+HashMap<String,Integer> max_rpms = new HashMap<String,Integer>();
+
+
+
+
 // class the creates and displays the gear shifting mechanisim
 public class GearShifter{
 
@@ -42,14 +52,25 @@ public class GearShifter{
     float yaa = 1 - ya;
     float ybb = 1 - yb;
     
-    float kpwall = 800*10; // Bereket: I need to multiply by 10 to make it work
-    float kiwall = 200*10;
-    float kismooth= 700*10;
-    float kdwall = 650*10;
+    // ****************************** //
+    // Bereket's parameters
+    float kpwall = 800*5; // Bereket: I need to multiply by 10 to make it work
+    float kiwall = 200*5;
+    float kismooth= 700*5;
+    float kdwall = 650*5;
     float curvefactor = 0.05*2;
+    float neutralRecoveryForce = 2.5*50; // Bereket : I need to multiply by 75 to make it work
+    // ****************************** //
 
-
-    float neutralRecoveryForce = 2.5*75; // Bereket : I need to multiply by 75 to make it work
+    // ****************************** //
+    // uncomment this to use the old parameters
+    // float kpwall = 800;
+    // float kiwall = 200;
+    // float kismooth= 700;
+    // float kdwall = 650;
+    // float curvefactor = 0.05;
+    // float neutralRecoveryForce = 2.5;
+    // ****************************** //
     
     float initial_offset = 0.0;
     float ballCreationYPosition = 0.0;
@@ -572,9 +593,16 @@ public class GearShifter{
     }
 
     public boolean setGear(GEAR g){
-        if(this.clutch == false) // clutch is not engaged
-            return false; // cannot change gear
         this.prev_gear = g;
+        if(this.clutch == false){ // clutch is not engaged
+            // TODO: ADD GRIND GEAR FORCE
+            // TODO: ADD SOUND EFFECT
+            // TODO: ADD VISUAL EFFECT
+            return false; // cannot change gear
+
+        }
+
+        // TODO: ADD VISUAL EFFECT
         return true; // gear changed
     }
 
@@ -584,6 +612,15 @@ public class GearShifter{
 
     public GEAR getPrevGear(){
         return this.prev_gear; // get the last gear that was set
+    }
+
+
+    public int getMinRPM(){
+        return 1000;
+    }
+
+    public int getMaxRPM(){
+        return 7000;
     }
 
     PVector device_to_graphics(PVector deviceFrame){

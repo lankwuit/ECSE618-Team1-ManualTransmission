@@ -115,19 +115,33 @@ public class Meter {
     this.setValue(cur_val);
   }
 
+  public void decreaseValue(int val){
+    int cur_val = int(this.value);
+    cur_val -= val;
+    if (cur_val < this.min_value)
+        val = this.min_value;
+    this.setValue(cur_val);
+  }
+
 
   public void increaseValue() {
-    // increase the value by a 
     float val = float(this.value);
 
-    val += (1-val/this.max_value)*this.max_value*0.1; // increase the value by 1% of the max value initally, then slowly increase afterwards
+    switch (this.type) {
+      case RPM:
+        val += (1-val/this.max_value)*this.max_value*0.1; // increase the value by 10% of the max value initally, then slowly increase afterwards
+        if (val > this.max_value) // clamp the value to the max value
+          val = this.max_value - 1;
+        if(val % 100 != 0)
+          val -= val % 100; // round to the nearest 100
+        break;
+      case SPEED:
+        val += (1-val/this.max_value)*this.max_value*0.02; // increase the value by 1% of the max value initally, then slowly increase afterwards
+        if (val > this.max_value) // clamp the value to the max value
+          val = this.max_value - 1;
+        break;
+    }
 
-    if (val > this.max_value) // clamp the value to the max value
-      val = this.max_value - 1;
-
-    if(val % 100 != 0)
-      val -= val % 100; // round to the nearest 100
-    
     this.setValue((int) val); // update the value
 
 
@@ -137,27 +151,28 @@ public class Meter {
         this.sound.amp( 0.7 ); // set the volume
         this.sound.jump(loc); // play the sound
     }
-    
-
-    // if( val > this.max_value*0.3 && val < this.max_value*0.7){
-    //   this.sound.jump(loc); // play the sound
-    // }
-    // else
-    //   this.sound.play(); // play the sound
   }
 
   public void decreaseValue() {
     // apply damping to the v```````````alue
     float val = float(this.value);
-    
-    val -= (val/this.max_value)*0.001; // decrease the value
 
-    // clamp the value to the min value
-    if(val <= this.min_value)
-      val = this.min_value;
-
-    if(val % 100 != 0)
-      val -= val % 100; // round to the nearest 100
+    switch (this.type) {
+      case RPM:
+        val -= (val/this.max_value)*0.001; // decrease the value
+        // clamp the value to the min value
+        if(val <= this.min_value)
+          val = this.min_value;
+          
+        if(val % 100 != 0)
+          val -= val % 100; // round to the nearest 100
+        break;
+      case SPEED:
+        val -= (val/this.max_value)*0.01;
+        if(val <= this.min_value)
+          val = this.min_value;
+        break;
+    }
 
     this.setValue((int) val); // update the value
   }

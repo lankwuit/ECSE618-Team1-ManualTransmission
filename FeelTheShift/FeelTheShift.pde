@@ -83,17 +83,16 @@ int arrow_sep = 75;
 PImage up_arrow_img, down_arrow_img;
 
 
-
-
 SoundFile engine_rev_sound, engine_idle_sound;
 SoundFile engine_start, start_screen_sound, main_screen_sound;
+float background_volume = 0.05; // background music volume
+float engine_volume = 0.1; // background engine volume
 
 /* define sensors */
 Meter high_score_text, score_text, time_text, rpm_sensor, speed_sensor;
 Meter start_button, reset_button;
 Meter up_arrow, down_arrow;
 
-int rpm_value = 500;
 int current_time = 0;
 int last_time = 0;
 
@@ -145,21 +144,21 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-   haplyBoard          = new Board(this, "/dev/cu.usbmodem141401", 0);
-   widgetOne           = new Device(widgetOneID, haplyBoard);
-   pantograph          = new Pantograph();
+   //haplyBoard          = new Board(this, "/dev/cu.usbmodem142301", 0);
+   //widgetOne           = new Device(widgetOneID, haplyBoard);
+   //pantograph          = new Pantograph();
   
-   widgetOne.set_mechanism(pantograph);
+   //widgetOne.set_mechanism(pantograph);
   
-   //start: added to fix inverse motion of the ball
-   widgetOne.add_actuator(1, CCW, 2);
-   widgetOne.add_actuator(2, CW, 1);
+   ////start: added to fix inverse motion of the ball
+   //widgetOne.add_actuator(1, CCW, 2);
+   //widgetOne.add_actuator(2, CW, 1);
 
-   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-   widgetOne.add_encoder(2, CW, -61, 10752, 1);
+   //widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+   //widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-   widgetOne.device_set_parameters();
+   //widgetOne.device_set_parameters();
 
   // engine sound
   engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
@@ -169,7 +168,7 @@ void setup(){
   engine_start = new SoundFile(this, "../audio/engine-start.wav");
   main_screen_sound = new SoundFile(this, "../audio/main_audio.wav");
   start_screen_sound = new SoundFile(this, "../audio/title_audio.wav");
-  start_screen_sound.amp(0.01);
+  start_screen_sound.amp(background_volume);
   start_screen_sound.loop(); // play the sound while in game_state 0
 
 
@@ -293,22 +292,35 @@ void draw(){
     // check the gear
     GEAR cur_gear = mechanisim.getGear(pos_ee);
     if(mechanisim.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes
-      boolean isGoodShift = mechanisim.setGear(cur_gear);
+      boolean isGoodShift = shiftGear(cur_gear);
 
       if(isGoodShift){
         // good shift
         println("Good shift! Current gear: " + cur_gear);
-        score_text.increaseValue(1);
+        score_text.increaseValue(100); // 100 points for a good shift
       }else{
         // bad shift
+
         println("Bad shift!");
+        score_text.decreaseValue(50); // 50 points penalty for a bad shift
       }
     }
 
-    // decrase rpm value every 10 frames
+    // decrase rpm value every 2 frames
     if(frameCount % 2 == 0){
       rpm_sensor.decreaseValue();
     }
+
+    // decrase speed value every 10 frames
+    if(frameCount % 10 == 0){
+      speed_sensor.decreaseValue();
+    }
+
+    // increase time every 5 frames
+    if(frameCount % 10 == 0)
+      time_text.increaseValue(1);
+
+
   }else if(rendering_force == false && game_state == 0){
     imageMode(CORNER);
     image(splashGif, 0 ,0, w, h);
@@ -317,7 +329,7 @@ void draw(){
     pushMatrix();
     translate(w/2, h/2);
     rotate(frameCount * 0.01);
-    fill(0, 0, 0);
+    fill(0);
     ellipse(0, 0, 150, 150);
     popMatrix();
 
@@ -337,24 +349,28 @@ void keyPressed(){
     brake.press();
     up_arrow.press();
     down_arrow.press();
+
+    rpm_sensor.decreaseValue(); // decrease the rpm value
+    speed_sensor.decreaseValue(); // decrease the speed value
   }
   if(key == 'd' || key == 'D'){
     gas.press();
     rpm_sensor.increaseValue(); // increase the rpm value
+    speed_sensor.increaseValue(); // increase the speed value
   }
 
   if(key == 'x' || key == 'X'){
     if(game_state == 0){
-      engine_start.amp(0.1);
+      engine_start.amp(engine_volume);
       engine_start.play();
       delay((int) (engine_start.duration() * 1000)); // wait for the engine start sound to finish
       start_screen_sound.stop();
       
-      main_screen_sound.amp(0.01);
+      main_screen_sound.amp(background_volume);
       main_screen_sound.loop();
-      //engine_idle_sound.amp(0.5);
-      //sengine_idle_sound.loop();
-      //main_screen_sound.loop();
+      engine_idle_sound.amp(engine_volume);
+      engine_idle_sound.loop();
+
       game_state = 1; // start game
       backgroundGif.loop(); // play the gif
     }
@@ -379,6 +395,20 @@ void keyReleased(){
   }
 }
 
+// helper to shift gears
+boolean shiftGear(GEAR gear){
+  boolean isGoodShift = mechanisim.setGear(gear);
+
+  if(isGoodShift){
+
+    int min_rpm = mechanisim.getMinRPM();
+    int max_rpm = mechanisim.getMaxRPM();
+    rpm_sensor.setRange(min_rpm, max_rpm);
+  }
+
+  return isGoodShift;
+}
+
 /* simulation section **************************************************************************************************/
 class SimulationThread implements Runnable{
   
@@ -387,22 +417,22 @@ class SimulationThread implements Runnable{
     
     rendering_force = true;
     
-     if(haplyBoard.data_available()){
-       /* GET END-EFFECTOR STATE (TASK SPACE) */
-       widgetOne.device_read_data();
+     //if(haplyBoard.data_available()){
+     //  /* GET END-EFFECTOR STATE (TASK SPACE) */
+     //  widgetOne.device_read_data();
     
-       angles.set(widgetOne.get_device_angles()); 
-       pos_ee.set(widgetOne.get_device_position(angles.array()));
-       pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
+     //  angles.set(widgetOne.get_device_angles()); 
+     //  pos_ee.set(widgetOne.get_device_position(angles.array()));
+     //  pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
 
 
-       if(game_state == 1)
-         mechanisim.forcerender(pos_ee);
+     //  if(game_state == 1)
+     //    mechanisim.forcerender(pos_ee);
 
 
-     }    
-     torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
-     widgetOne.device_write_torques();
+     //}    
+     //torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
+     //widgetOne.device_write_torques();
   
   
     rendering_force = false;
