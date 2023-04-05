@@ -342,6 +342,8 @@ void draw(){
     translate(w/2, h/2);
     rotate(frameCount * 0.01);
     fill(0);
+    stroke(255);
+    strokeWeight(4);
     ellipse(0, 0, 140 + 10*sin( radians(frameCount % 360))  , 140 + 10*sin( radians(frameCount % 360)) );
     popMatrix();
 
@@ -395,17 +397,6 @@ void keyPressed(){
   }
 
   if(key == 'r' || key == 'R'){
-    // if(game_state == 1){
-    //   game_state = 0; // reset game
-    //   backgroundGif.stop(); // stop the gif
-    //   main_screen_sound.stop();
-    //   engine_idle_sound.stop();
-    //   start_screen_sound.amp(background_volume);
-    //   start_screen_sound.loop();
-    //   score_text.setValue(0);
-    //   time_text.setValue(0);
-    //   high_score_text.setValue(0);
-    // }
     reset_button.press();
   }
 
@@ -433,20 +424,35 @@ void keyReleased(){
 
 
   if(key == 'r' || key == 'R'){
-
     reset_button.release();
+
+
+    if(game_state == 1){
+      
+      backgroundGif.stop(); // stop the gif
+      main_screen_sound.stop();
+      engine_idle_sound.stop();
+      start_screen_sound.amp(background_volume);
+      start_screen_sound.loop();
+      score_text.setValue(0);
+      time_text.setValue(0);
+
+      game_state = 0; // reset game
+    }
   }
 
   if(key == 'e' || key == 'E'){
     end_button.release();
 
-    // stop the game audio  
-    main_screen_sound.stop();
-    engine_idle_sound.stop();
+    if(game_state == 1){
+      // stop the game audio  
+      main_screen_sound.stop();
+      engine_idle_sound.stop();
 
 
-    game_state = 2; // end game
-    endGif.loop(); // play the gif
+      game_state = 2; // end game
+      endGif.loop(); // play the gif
+    } 
   }
 }
 
