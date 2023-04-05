@@ -61,14 +61,6 @@ public class Meter {
         break;
 
       case BUTTON:
-        this.setValue(0);
-
-        this.sensor = createShape(RECT, this.x, this.y, this.w, this.h, this.radius);
-        this.sensor.setFill(color(0));
-        this.sensor.setStroke(true);
-        this.sensor.setStroke(color(0));
-        break;
-
       case TEXT:
         this.setValue(0);
         break;
@@ -93,6 +85,10 @@ public class Meter {
     }
   }
 
+  public void setValue(String value) {
+    this.value = value;
+  }
+
   public void setFontSize(int size){
     this.font_size = size;
   }
@@ -111,7 +107,7 @@ public class Meter {
     int cur_val = int(this.value);
     cur_val += val;
     if (cur_val > this.max_value) // clamp the value to the max value
-        val = this.max_value - 1;
+        cur_val = this.max_value - 1;
     this.setValue(cur_val);
   }
 
@@ -119,7 +115,7 @@ public class Meter {
     int cur_val = int(this.value);
     cur_val -= val;
     if (cur_val < this.min_value)
-        val = this.min_value;
+        cur_val = this.min_value;
     this.setValue(cur_val);
   }
 
@@ -197,11 +193,14 @@ public class Meter {
         break;
 
       case BUTTON:
-        shape(this.sensor); // draw the box
+        //shape(this.sensor); // draw the box
+        this.drawButton();
         this.drawText(); // draw the text
         break;
       
       case PEDAL:
+        this.drawPedal(); // draw the pedal
+        break;
       case ICON:
         this.drawIcon(); // draw the image, for example a break
         break;
@@ -209,6 +208,22 @@ public class Meter {
       case OTHER:
         break;
     }
+  }
+
+  private void drawButton(){
+    rectMode(CENTER);
+    fill(0);
+
+    if(this.pressed)
+      stroke(0);
+     else
+      stroke(255);
+    rect(this.x + this.w/2, this.y + this.h/2, this.w, this.h, this.radius);
+
+    // draw value below
+    fill(255); // set fill colour for text
+    textFont(this.font, this.font_size * 0.75); // specify font
+    text(this.value, this.x + this.w/2, this.y + this.h + this.font_size * 0.5);
   }
 
   private void drawText(){
@@ -222,7 +237,7 @@ public class Meter {
     fill(255); // set fill colour for text
     textFont(this.font, this.font_size); // specify font
     float name_size = textWidth(this.name);
-    String top_text = "HIGHSCORE";
+    String top_text = "TARGET";
     if(!this.name.equals(top_text)){
       name_size = textWidth(top_text);
       textAlign(RIGHT, CENTER);
@@ -251,7 +266,7 @@ public class Meter {
   }
   
   private void drawIcon(){
-    imageMode(CENTER);
+    imageMode(CORNER);
     
     if(this.pressed)
       tint(255, 255);
@@ -259,6 +274,18 @@ public class Meter {
        tint(255, 120); // make the image transparent to show it is pressed
        
     image(this.icon, this.x, this.y, this.w, this.h);
+  }
+
+  private void drawPedal(){
+    this.drawIcon();
+
+    // draw the text below the pedal
+    fill(255); // set fill colour for text
+    textAlign(CENTER, CENTER);
+    textFont(this.font, this.font_size * 0.5); // specify font
+    text(this.name, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 0.35);
+    textFont(this.font, this.font_size * 0.75); // specify font
+    text(this.value, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 1.0);
   }
   
   public void press(){

@@ -29,12 +29,12 @@ public class GearShifter{
     
     // ****************************** //
     // Bereket's parameters
-    //float kpwall = 800*5; // Bereket: I need to multiply by 10 to make it work
-    //float kiwall = 200*5;
-    //float kismooth= 700*5;
-    //float kdwall = 650*5;
-    //float curvefactor = 0.05*2;
-    //float neutralRecoveryForce = 2.5*50; // Bereket : I need to multiply by 75 to make it work
+    float kpwall = 800*10; // Bereket: I need to multiply by 10 to make it work
+    float kiwall = 200*10;
+    float kismooth= 700*10;
+    float kdwall = 650*10;
+    float curvefactor = 0.05*2;
+    float neutralRecoveryForce = 2.5*75; // Bereket : I need to multiply by 75 to make it work
     // ****************************** //
 
     // ****************************** //
