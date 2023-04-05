@@ -144,21 +144,21 @@ void setup(){
    *      linux:        haplyBoard = new Board(this, "/dev/ttyUSB0", 0);
    *      mac:          haplyBoard = new Board(this, "/dev/cu.usbmodem1411", 0);
    */
-   //haplyBoard          = new Board(this, "/dev/cu.usbmodem142301", 0);
-   //widgetOne           = new Device(widgetOneID, haplyBoard);
-   //pantograph          = new Pantograph();
+   haplyBoard          = new Board(this, "COM9", 0);
+   widgetOne           = new Device(widgetOneID, haplyBoard);
+   pantograph          = new Pantograph();
   
-   //widgetOne.set_mechanism(pantograph);
+   widgetOne.set_mechanism(pantograph);
   
    ////start: added to fix inverse motion of the ball
-   //widgetOne.add_actuator(1, CCW, 2);
-   //widgetOne.add_actuator(2, CW, 1);
+   widgetOne.add_actuator(1, CCW, 2);
+   widgetOne.add_actuator(2, CW, 1);
 
-   //widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-   //widgetOne.add_encoder(2, CW, -61, 10752, 1);
+   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+   widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-   //widgetOne.device_set_parameters();
+   widgetOne.device_set_parameters();
 
   // engine sound
   engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
@@ -300,6 +300,9 @@ void draw(){
         score_text.increaseValue(100); // 100 points for a good shift
       }else{
         // bad shift
+        // TODO clutch interactions
+        
+
 
         println("Bad shift!");
         score_text.decreaseValue(50); // 50 points penalty for a bad shift
@@ -417,22 +420,22 @@ class SimulationThread implements Runnable{
     
     rendering_force = true;
     
-     //if(haplyBoard.data_available()){
-     //  /* GET END-EFFECTOR STATE (TASK SPACE) */
-     //  widgetOne.device_read_data();
+     if(haplyBoard.data_available()){
+      /* GET END-EFFECTOR STATE (TASK SPACE) */
+      widgetOne.device_read_data();
     
-     //  angles.set(widgetOne.get_device_angles()); 
-     //  pos_ee.set(widgetOne.get_device_position(angles.array()));
-     //  pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
+      angles.set(widgetOne.get_device_angles()); 
+      pos_ee.set(widgetOne.get_device_position(angles.array()));
+      pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
 
 
-     //  if(game_state == 1)
-     //    mechanisim.forcerender(pos_ee);
+      if(game_state == 1)
+        mechanisim.forcerender(pos_ee);
 
 
-     //}    
-     //torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
-     //widgetOne.device_write_torques();
+     }    
+     torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
+     widgetOne.device_write_torques();
   
   
     rendering_force = false;

@@ -1,28 +1,3 @@
-/*
- *                        _oo0oo_
- *                       o8888888o
- *                       88" . "88
- *                       (| -_- |)
- *                       0\  =  /0
- *                     ___/`---'\___
- *                   .' \\|     |// '.
- *                  / \\|||  :  |||// \
- *                 / _||||| -:- |||||- \
- *                |   | \\\  - /// |   |
- *                | \_|  ''\---/''  |_/ |
- *                \  .-\__  '-'  ___/-. /
- *              ___'. .'  /--.--\  `. .'___
- *           ."" '<  `.___\_<|>_/___.' >' "".
- *          | | :  `- \`.;`\ _ /`;.`/ - ` : | |
- *          \  \ `_.   \_ __\ /__ _/   .-` /  /
- *      =====`-.____`.___ \_____/___.-`___.-'=====
- *                        `=---='
- * 
- * 
- *      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *      NO BUG PLS
- */
-
 import java.util.Map;
 
 
@@ -54,22 +29,22 @@ public class GearShifter{
     
     // ****************************** //
     // Bereket's parameters
-    float kpwall = 800*5; // Bereket: I need to multiply by 10 to make it work
-    float kiwall = 200*5;
-    float kismooth= 700*5;
-    float kdwall = 650*5;
-    float curvefactor = 0.05*2;
-    float neutralRecoveryForce = 2.5*50; // Bereket : I need to multiply by 75 to make it work
+    //float kpwall = 800*5; // Bereket: I need to multiply by 10 to make it work
+    //float kiwall = 200*5;
+    //float kismooth= 700*5;
+    //float kdwall = 650*5;
+    //float curvefactor = 0.05*2;
+    //float neutralRecoveryForce = 2.5*50; // Bereket : I need to multiply by 75 to make it work
     // ****************************** //
 
     // ****************************** //
     // uncomment this to use the old parameters
-    // float kpwall = 800;
-    // float kiwall = 200;
-    // float kismooth= 700;
-    // float kdwall = 650;
-    // float curvefactor = 0.05;
-    // float neutralRecoveryForce = 2.5;
+     float kpwall = 800;
+     float kiwall = 200;
+     float kismooth= 700;
+     float kdwall = 650;
+     float curvefactor = 0.1;
+     float neutralRecoveryForce = 2.5;
     // ****************************** //
     
     float initial_offset = 0.0;
@@ -353,6 +328,7 @@ public class GearShifter{
 
         /* haptic wall force calculation */
         this.fWall.set(0, 0);
+        this.penWall.set(0,0);
 
         /*change coordinate of the posEE to the actual coordinate that we are using */
         PVector posReltoCustomSpace = new PVector(0, 0);
@@ -437,7 +413,8 @@ public class GearShifter{
         }
         
         temp = penWall.x;
-        //for DEF, JKL etc.
+        //for DEF, JKL etc, including clutch interactions
+
         if(topCoords[6]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[10]*w/scale){
             penWall.set(0,
                 abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale>posReltoCustomSpace.y ? (topCoords[7]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[7]*h/scale-posReltoCustomSpace.y+rEE)):(
@@ -451,10 +428,34 @@ public class GearShifter{
                 )
             );
         }
+
+        if(!clutch){
+            if(topCoords[0]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[4]*w/scale){
+                penWall.add(0,
+                    abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale-posReltoCustomSpace.y+rEE):(
+                        abs(bottomCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE):0
+                    )
+                );
+            }else if(topCoords[12]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[16]*w/scale){
+                penWall.add(0,
+                    abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale-posReltoCustomSpace.y+rEE):(
+                        abs(bottomCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE):0
+                    )
+                );
+            }else if(topCoords[24]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[28]*w/scale){
+                penWall.add(0,
+                    abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale-posReltoCustomSpace.y+rEE):(
+                        abs(bottomCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE):0
+                    )
+                );
+            }
+        }
+
         //for center zone recovery
         if(topCoords[9]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[9]*h/scale && topCoords[0]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[28]*w/scale){
             NeutralCentering(posEE);
         }
+
 
 
         temp2 = penWall.y;
@@ -592,12 +593,17 @@ public class GearShifter{
         return cur_gear;
     }
 
+
+
     public boolean setGear(GEAR g){
         this.prev_gear = g;
         if(this.clutch == false){ // clutch is not engaged
             // TODO: ADD GRIND GEAR FORCE
+            // Grind Gear force added in the shifter section. Right now it is more of a wall effect
             // TODO: ADD SOUND EFFECT
             // TODO: ADD VISUAL EFFECT
+
+
             return false; // cannot change gear
 
         }
