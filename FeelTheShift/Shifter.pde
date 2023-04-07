@@ -39,12 +39,12 @@ public class GearShifter{
 
     // ****************************** //
     // uncomment this to use the old parameters
-     float kpwall = 800;
-     float kiwall = 200;
-     float kismooth= 700;
-     float kdwall = 650;
-     float curvefactor = 0.1;
-     float neutralRecoveryForce = 2.5;
+    //  float kpwall = 800;
+    //  float kiwall = 200;
+    //  float kismooth= 700;
+    //  float kdwall = 650;
+    //  float curvefactor = 0.1;
+    //  float neutralRecoveryForce = 2.5;
     // ****************************** //
     
     float initial_offset = 0.0;
@@ -60,6 +60,8 @@ public class GearShifter{
     PVector penWall = new PVector(0, 0);
     PVector fWall   = new PVector(0, 0);
     PVector fEE    = new PVector(0, 0);
+
+    boolean showForce = false;
 
     //  this is the endeffector part
     PShape endEffector;
@@ -197,8 +199,6 @@ public class GearShifter{
         line(this.w * topCoords[topCoords.length - 2], this.h * topCoords[topCoords.length - 1], this.w * bottomCoords[bottomCoords.length - 2], this.h * bottomCoords[bottomCoords.length - 1]);
 
 
-
-        // TODO Remove the following lines since it is just for debugging
         // highlighting the interesection points of the pattern
         strokeWeight(4); //back to default
         ellipseMode(CENTER);
@@ -242,6 +242,7 @@ public class GearShifter{
         posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
         GEAR cur_gear = getGear(posEE);
 
+        
         if(game_state == 0)
             cur_gear = GEAR.NEUTRAL;
 
@@ -274,6 +275,28 @@ public class GearShifter{
             case FIVE:
                 text("5", x, y);
                 break;
+        }
+
+
+        // draw the force vector on the end effector
+        if(showForce){
+            pushMatrix();
+            strokeWeight(2);
+            stroke(255);
+
+            float l = fWall.mag(); // length of the force vector
+
+            translate(xE,yE); // translate to the centre of the end effector
+            rotate(atan2(fWall.x, fWall.y)); // rotate the force vector to the direction of the force vector
+            line(0, 0, l, 0); // draw a line from the centre of the end effector to the end of the force vector
+            
+            translate(l, 0); // translate to the end of the force vector
+            float a = radians(150);
+            float x1 = 8 * cos(a);
+            float y1 = 8 * sin(a);
+            line(0, 0, -x1, y1); // draw the top part of the arrow
+            line(0, 0, -x1, -y1); // draw the bottom part of the arrow
+            popMatrix();
         }
     }
     
@@ -627,6 +650,15 @@ public class GearShifter{
 
     public int getMaxRPM(){
         return 7000;
+    }
+
+
+    /** 
+    * This functions sets the showForce variable to true or false
+    * @param showForce if set to true, the force will be shown on the screen as a vector
+    */
+    public void showForce(boolean showForce){
+        this.showForce = showForce;
     }
 
     PVector device_to_graphics(PVector deviceFrame){
