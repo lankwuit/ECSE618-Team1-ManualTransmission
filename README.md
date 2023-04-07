@@ -2,7 +2,7 @@
 An educational manual shifting simulator for Haply platform
 
 Here is an image of the simulator in action:
-![Feel The Shift](img/game_view.png)
+![Feel The Shift](imgs/game_view.png)
 
 
 ## Getting Started
