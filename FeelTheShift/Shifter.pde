@@ -98,8 +98,8 @@ public class GearShifter{
     float oldey = 0.0f;
 
     // font
-    int font_size = 48;
-    PFont font = createFont("../fonts/ArcadeClassic.ttf", this.font_size, true);
+    int font_size = 32;
+    PFont font = createFont("../fonts/PressStart.ttf", this.font_size, true);
 
     // the coordinates of curve to draw; must have 2n enteries so that (x/w,y/h) = topCoords[i], topCoords[i+1]
     // top left to top right
@@ -247,7 +247,7 @@ public class GearShifter{
             cur_gear = GEAR.NEUTRAL;
 
         fill(255);
-        textFont(this.font, 80); // specify font
+        textFont(this.font, 40); // specify font
         textAlign(CENTER, CENTER);
 
         float x = posReltoCustomSpace.x * this.scale;

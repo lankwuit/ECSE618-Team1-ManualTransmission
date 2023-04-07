@@ -42,7 +42,7 @@ public class Meter {
     this.value = "0";
     this.type = type;
     this.font_size = 30;
-    this.font = createFont("../fonts/ArcadeClassic.ttf", this.font_size, true);
+    this.font = createFont("../fonts/PressStart.ttf", this.font_size, true);
 
 
     switch (this.type) {
@@ -222,7 +222,7 @@ public class Meter {
 
     // draw value below
     fill(255); // set fill colour for text
-    textFont(this.font, this.font_size * 0.75); // specify font
+    textFont(this.font, this.font_size*0.5); // specify font
     text(this.value, this.x + this.w/2, this.y + this.h + this.font_size * 0.5);
   }
 
@@ -249,7 +249,7 @@ public class Meter {
 
     textAlign(RIGHT, CENTER);
     textFont(this.font, this.font_size); // specify font
-    text(this.value, this.x + name_size, this.y + this.font_size);
+    text(this.value, this.x + name_size, this.y + this.font_size*1.4);
   }
 
   private void drawValue() {
@@ -261,8 +261,8 @@ public class Meter {
     text(this.value, this.x + value_size, this.y); // draw this text in the center of the box
 
     textAlign(RIGHT, CENTER);
-    textFont(this.font, this.font_size * 0.375); // specify font
-    text(this.name, this.x + value_size, this.y + this.font_size * 0.5);
+    textFont(this.font, this.font_size * 0.4); // specify font
+    text(this.name, this.x + value_size, this.y + this.font_size * 1.1);
   }
   
   private void drawIcon(){
@@ -282,10 +282,10 @@ public class Meter {
     // draw the text below the pedal
     fill(255); // set fill colour for text
     textAlign(CENTER, CENTER);
-    textFont(this.font, this.font_size * 0.5); // specify font
-    text(this.name, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 0.35);
-    textFont(this.font, this.font_size * 0.75); // specify font
-    text(this.value, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 1.0);
+    textFont(this.font, this.font_size); // specify font
+    text(this.name, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 1);
+    textFont(this.font, this.font_size); // specify font
+    text(this.value, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 2.5);
   }
   
   public void press(){

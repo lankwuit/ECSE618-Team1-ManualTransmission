@@ -33,10 +33,10 @@ Gif splashGif;
 Gif endGif;
 
 /* brake, gas, clutch position definitions in pixels*/
-int gas_x = 175;
-int gas_y = 250;
-int brake_x = gas_x - 60;
-int clutch_x = gas_x - 60*2;
+int gas_x = 200;
+int gas_y = 220;
+int brake_x = gas_x - 80;
+int clutch_x = gas_x - 80*2;
 
 Meter brake, gas, clutch;
 PImage brakeImg, clutchImg, gasImg;
@@ -44,7 +44,7 @@ PImage brakeImg, clutchImg, gasImg;
 SoundFile pedal_sound;
 
 /* rpm & speed sensor size definitons in pixels */
-int rpm_x = 50;
+int rpm_x = 60;
 int rpm_y = 50;
 int rpm_w = 200;
 int rpm_h = 100;
@@ -56,7 +56,8 @@ int speed_w = 200;
 int speed_h = 100;
 int MAX_SPEED = 160; // km/h
 
-int rpm_font_size = 64;
+int rpm_font_size = 40;
+int pedal_font_size = 12;
 
 /* game components */
 int game_time = 0;
@@ -68,7 +69,7 @@ int game_text_x = 820;
 int game_text_y = 50;
 int game_text_sep = 100;
 
-int game_text_font_size = 42;
+int game_text_font_size = 24;
 
 int button_x = 820;
 int button_y = 325;
@@ -76,12 +77,27 @@ int button_w = 100;
 int button_h = 40;
 int button_sep = button_w + 20;
 
-int button_font_size = 32;
+int button_font_size = 24;
 
 int arrow_x = 225;
 int arrow_y = 50;
 int arrow_sep = 75;
 PImage up_arrow_img, down_arrow_img;
+
+final String[] target_gears = { "1", "2", "3", "4", "5", "R" };
+
+/*
+
+Easy sequence: 1, 2, 3, 4, 5 (acceleration)
+Easy sequence: 4, 3, 2, 1, N (deceleration)
+
+Med Sequence: 1, 2, 3, 2, 1, R, N (acceleration, deceleration, reverse)
+
+Hard sequence: 1, 2, 1, R, N, 2 (acceleration, deceleration, reverse)
+
+*/
+
+
 
 
 SoundFile engine_rev_sound, engine_idle_sound;
@@ -194,7 +210,7 @@ void setup(){
 
   score_text.setRange(0, 999);
 
-  target_text.setValue("GEAR N");
+  target_text.setValue("GEAR " + target_gears[0]);
 
   
   // start & reset buttons
@@ -207,7 +223,7 @@ void setup(){
   end_button.setFontSize(button_font_size);
   reset_button.setFontSize(button_font_size);
 
-  end_button.setValue("E");
+  end_button.setValue("HOLD E");
   reset_button.setValue("R");
 
   // shift arrows
@@ -246,18 +262,21 @@ void setup(){
   clutch.setSound(pedal_sound);
   clutch.setName("CLUTCH");
   clutch.setValue("A");
+  clutch.setFontSize(pedal_font_size);
   
   brake = new Meter(brake_x, gas_y, brakeImg.width, brakeImg.height, METER_TYPE.PEDAL); // draw brake pedel
   brake.setIcon(brakeImg); 
   brake.setSound(pedal_sound);
   brake.setName("BRAKE");
   brake.setValue("S");
+  brake.setFontSize(pedal_font_size);
   
   gas = new Meter(gas_x, gas_y, gasImg.width, gasImg.height, METER_TYPE.PEDAL); // draw brake pedel
   gas.setIcon(gasImg);
   gas.setSound(pedal_sound);  
   gas.setName("GAS");
   gas.setValue("D");
+  gas.setFontSize(pedal_font_size);
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
   mechanisim = new GearShifter(w, h, pixelsPerMeter);
@@ -298,7 +317,7 @@ void draw(){
     gas.draw();
 
     end_button.draw();
-    reset_button.draw();
+    //reset_button.draw();
 
     up_arrow.draw();
     down_arrow.draw();
@@ -307,6 +326,7 @@ void draw(){
     mechanisim.draw_ee(pos_ee.x, pos_ee.y);
 
     // check the gear
+    int indx = frameCount % 6;
     GEAR cur_gear = mechanisim.getGear(pos_ee);
     if(mechanisim.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes
       boolean isGoodShift = shiftGear(cur_gear);
@@ -315,6 +335,7 @@ void draw(){
         // good shift
         println("Good shift! Current gear: " + cur_gear);
         score_text.increaseValue(10); // 10 points for a good shift
+        target_text.setValue("GEAR " + target_gears[indx]);
       }else{
         // bad shift
         // TODO clutch interactions
@@ -337,8 +358,23 @@ void draw(){
     }
 
     // increase time every 5 frames
-    if(frameCount % 10 == 0)
+    if(frameCount % 10 == 0){
       time_text.increaseValue(1);
+    }
+
+    GEAR target = GEAR.NEUTRAL;
+    if(target_gears[indx] == "R")
+      target = GEAR.REVERSE;
+    else if(target_gears[indx] == "1")
+      target = GEAR.ONE;
+    else if(target_gears[indx] == "2")
+      target = GEAR.TWO;
+    else if(target_gears[indx] == "3")
+      target = GEAR.THREE;
+    else if(target_gears[indx] == "4")
+      target = GEAR.FOUR;
+    else if(target_gears[indx] == "5")
+      target = GEAR.FIVE;
 
 
   }else if(rendering_force == false && game_state == 0){
@@ -361,6 +397,8 @@ void draw(){
     // end screen
     imageMode(CORNER);
     image(endGif, 0 ,0, w, h);
+
+    // TODO: draw the end screen scoreboard
   }
 }
 /* end draw section ****************************************************************************************************/
@@ -438,7 +476,7 @@ void keyReleased(){
     reset_button.release();
 
 
-    if(game_state == 1){
+    if(game_state == 1 && false){
       
       backgroundGif.stop(); // stop the gif
       main_screen_sound.stop();
