@@ -51,7 +51,7 @@ public class Meter {
         this.setValue(0);
         break;
       case SPEED:
-        this.name = "KMPH";
+        this.name = "KM/H";
         this.setValue(0);
         break;
 

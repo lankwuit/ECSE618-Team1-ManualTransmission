@@ -357,12 +357,6 @@ public class GearShifter{
         PVector posReltoCustomSpace = new PVector(0, 0);
         posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
 
-        //check if the initial position tuning has passed
-        //if (!initialFlag){
-        //    initialHandler(posReltoCustomSpace);
-        //    return;
-        //}
-
         // * topcord 是按照 % width 来做的，width 为常量关于pixel的 posEE是按照米的 ，rEE 是按照M的
         float temp = 0.0, temp2=0.0;
         //force feedback for all vertical walls
@@ -619,18 +613,15 @@ public class GearShifter{
 
 
     public boolean setGear(GEAR g){
-        this.prev_gear = g;
+        this.prev_gear = g; // change the last gear
+
         if(this.clutch == false){ // clutch is not engaged
-            // TODO: ADD GRIND GEAR FORCE
             // Grind Gear force added in the shifter section. Right now it is more of a wall effect
             // TODO: ADD SOUND EFFECT
             // TODO: ADD VISUAL EFFECT
-
-
             return false; // cannot change gear
 
-        }
-
+        } 
         // TODO: ADD VISUAL EFFECT
         return true; // gear changed
     }

@@ -85,7 +85,6 @@ int arrow_sep = 75;
 PImage up_arrow_img, down_arrow_img;
 
 final String[] target_gears = { "1", "2", "3", "4", "5", "R" };
-
 /*
 
 Easy sequence: 1, 2, 3, 4, 5 (acceleration)
@@ -96,6 +95,14 @@ Med Sequence: 1, 2, 3, 2, 1, R, N (acceleration, deceleration, reverse)
 Hard sequence: 1, 2, 1, R, N, 2 (acceleration, deceleration, reverse)
 
 */
+
+StringList gear_seq = new StringList(new String[] {
+  "1","2", "3", "4", "5",
+  "4", "3", "2", "1", "N",
+  "1", "2", "3", "2", "1", "R", "N",
+  "1", "2", "1", "R", "N", "2"
+  });
+int gear_seq_index = 0;
 
 
 
@@ -134,8 +141,8 @@ PVector           pos_ee                              = new PVector(0, 0);
 PVector           f_ee                                = new PVector(0, 0); 
 
 
-/* define gear mechanisim */
-GearShifter mechanisim;
+/* define gear mechanism */
+GearShifter mechanism;
 
 /* end elements definition *********************************************************************************************/  
 
@@ -210,7 +217,7 @@ void setup(){
 
   score_text.setRange(0, 999);
 
-  target_text.setValue("GEAR " + target_gears[0]);
+  target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
 
   
   // start & reset buttons
@@ -279,10 +286,10 @@ void setup(){
   gas.setFontSize(pedal_font_size);
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
-  mechanisim = new GearShifter(w, h, pixelsPerMeter);
+  mechanism = new GearShifter(w, h, pixelsPerMeter);
   
   /* Haptic Tool Initialization */
-  mechanisim.create_ee();
+  mechanism.create_ee();
 
   
   /* setup framerate speed */
@@ -322,28 +329,47 @@ void draw(){
     up_arrow.draw();
     down_arrow.draw();
     
-    mechanisim.draw();
-    mechanisim.draw_ee(pos_ee.x, pos_ee.y);
+    mechanism.draw();
+    mechanism.draw_ee(pos_ee.x, pos_ee.y);
 
     // check the gear
-    int indx = frameCount % 6;
-    GEAR cur_gear = mechanisim.getGear(pos_ee);
-    if(mechanisim.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes
-      boolean isGoodShift = shiftGear(cur_gear);
+    GEAR cur_gear = mechanism.getGear(pos_ee);
+    if(mechanism.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes      
+      boolean canChangeGear = shiftGear(cur_gear);
+      boolean targetGearReached = reachedTargetGear(cur_gear);
 
-      if(isGoodShift){
+      boolean isGoodShift = true; // assume good shift
+      if(rpm_sensor.getValue() < mechanism.getMinRPM(cur_gear) || rpm_sensor.getValue() > mechanism.getMaxRPM(cur_gear)){
+        isGoodShift = false; // outside the rpm range to shift
+      }
+
+      if(canChangeGear && isGoodShift && targetGearReached){ // have reached target gear and made a great shift
         // good shift
         println("Good shift! Current gear: " + cur_gear);
         score_text.increaseValue(10); // 10 points for a good shift
-        target_text.setValue("GEAR " + target_gears[indx]);
-      }else{
-        // bad shift
-        // TODO clutch interactions
-        
 
+        // change the target to the next gear
+        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
+        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
 
-        println("Bad shift!");
+      }else if (!targetGearReached) { // did not reach target gear
+        println("Bad shift! Wrong gear: " + cur_gear);
         score_text.decreaseValue(10); // 10 points penalty for a bad shift
+
+      }else{ // reached target gear but made a bad shift
+
+        if(!canChangeGear){
+          println("Bad shift! Clutch not engaged");
+          score_text.decreaseValue(5); // 10 points penalty for a bad shift
+        }
+        if(!isGoodShift){
+          println("Bad shift! Wrong RPM: " + cur_rpm);
+          score_text.decreaseValue(5); // 10 points penalty for a bad shift
+        }
+
+        // change the target to the next gear
+        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
+        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
       }
     }
 
@@ -362,20 +388,12 @@ void draw(){
       time_text.increaseValue(1);
     }
 
-    GEAR target = GEAR.NEUTRAL;
-    if(target_gears[indx] == "R")
-      target = GEAR.REVERSE;
-    else if(target_gears[indx] == "1")
-      target = GEAR.ONE;
-    else if(target_gears[indx] == "2")
-      target = GEAR.TWO;
-    else if(target_gears[indx] == "3")
-      target = GEAR.THREE;
-    else if(target_gears[indx] == "4")
-      target = GEAR.FOUR;
-    else if(target_gears[indx] == "5")
-      target = GEAR.FIVE;
-
+    // highlight the up/down arrow based on the current and target gear
+    if( shouldShiftUp(cur_gear) ){
+        up_arrow.press();
+    }else{
+        down_arrow.press();
+    }
 
   }else if(rendering_force == false && game_state == 0){
     imageMode(CORNER);
@@ -391,7 +409,7 @@ void draw(){
     ellipse(0, 0, 140 + 10*sin( radians(frameCount % 360))  , 140 + 10*sin( radians(frameCount % 360)) );
     popMatrix();
 
-    mechanisim.draw_ee(pos_ee.x, pos_ee.y);
+    mechanism.draw_ee(pos_ee.x, pos_ee.y);
 
   } else if (rendering_force == false && game_state == 2){
     // end screen
@@ -407,12 +425,10 @@ void keyPressed(){
   
   if(key == 'a' || key == 'A'){
     clutch.press();
-    mechanisim.setClutch(true); // engage the clutch
+    mechanism.setClutch(true); // engage the clutch
   }
   if(key == 's' || key == 'S'){
     brake.press();
-    up_arrow.press();
-    down_arrow.press();
 
     rpm_sensor.decreaseValue(); // decrease the rpm value
     speed_sensor.decreaseValue(); // decrease the speed value
@@ -451,7 +467,7 @@ void keyPressed(){
   }
 
   if(key == 'f' || key == 'F'){
-    mechanisim.showForce(true);
+    mechanism.showForce(true);
   }
 
 }
@@ -460,7 +476,7 @@ void keyReleased(){
   
   if(key == 'a' || key == 'A'){
     clutch.release();
-    mechanisim.setClutch(false); // disengage the clutch
+    mechanism.setClutch(false); // disengage the clutch
   }
   if(key == 's' || key == 'S'){
     brake.release();
@@ -505,22 +521,49 @@ void keyReleased(){
   }
 
   if(key == 'f' || key == 'F'){
-    mechanisim.showForce(false);
+    mechanism.showForce(false);
   }
 }
 
 // helper to shift gears
 boolean shiftGear(GEAR gear){
-  boolean isGoodShift = mechanisim.setGear(gear);
+  boolean canChangeGear = mechanism.setGear(gear);
+  return canChangeGear;
+}
 
-  if(isGoodShift){
+// helper to check if the user should shift up
+boolean shouldShiftUp(GEAR cur_gear){
+  GEAR target = GEAR.NEUTRAL;
+  String target_gear = gear_seq.get(gear_seq_index);
+  target = getGearFromString(target_gear);
+  return cur_gear.ordinal() - target.ordinal() > 0;
 
-    int min_rpm = mechanisim.getMinRPM();
-    int max_rpm = mechanisim.getMaxRPM();
-    rpm_sensor.setRange(min_rpm, max_rpm);
-  }
+}
 
-  return isGoodShift;
+boolean reachedTargetGear(GEAR cur_gear){
+  GEAR target = GEAR.NEUTRAL;
+  String target_gear = gear_seq.get(gear_seq_index);
+  target = getGearFromString(target_gear);
+  return cur_gear == target;
+}
+
+Gear getGearFromString(String gear){
+  GEAR target = GEAR.NEUTRAL;
+
+  if(gear == "R")
+    target = GEAR.REVERSE;
+  else if(gear == "1")
+    target = GEAR.ONE;
+  else if(gear == "2")
+    target = GEAR.TWO;
+  else if(gear == "3")
+    target = GEAR.THREE;
+  else if(gear == "4")
+    target = GEAR.FOUR;
+  else if(gear == "5")
+    target = GEAR.FIVE;
+
+  return target;
 }
 
 /* simulation section **************************************************************************************************/
@@ -538,15 +581,15 @@ class SimulationThread implements Runnable{
     
     //   angles.set(widgetOne.get_device_angles()); 
     //   pos_ee.set(widgetOne.get_device_position(angles.array()));
-    //   pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
+    //   pos_ee.set(mechanism.device_to_graphics(pos_ee));  
 
 
     //   if(game_state == 1)
-    //     mechanisim.forcerender(pos_ee);
+    //     mechanism.forcerender(pos_ee);
 
 
     //  }    
-    //  torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
+    //  torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
     //  widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/
   
