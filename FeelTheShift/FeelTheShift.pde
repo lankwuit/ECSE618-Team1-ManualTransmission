@@ -356,6 +356,12 @@ void draw(){
         println("Bad shift! Wrong gear: " + cur_gear);
         score_text.decreaseValue(10); // 10 points penalty for a bad shift
 
+
+      }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
+        // good shift
+        println("Good shift! Current gear: " + cur_gear);
+        score_text.increaseValue(10); // 10 points for a good shift
+    
       }else{ // reached target gear but made a bad shift
 
         if(!canChangeGear){
