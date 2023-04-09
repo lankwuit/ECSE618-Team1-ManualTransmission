@@ -3,11 +3,6 @@ import java.util.Map;
 
 enum GEAR{REVERSE, NEUTRAL, ONE, TWO, THREE, FOUR, FIVE}; // types of meters
 
-HashMap<String,Integer> min_rpms = new HashMap<String,Integer>();
-HashMap<String,Integer> max_rpms = new HashMap<String,Integer>();
-
-
-
 
 // class the creates and displays the gear shifting mechanisim
 public class GearShifter{
@@ -100,6 +95,10 @@ public class GearShifter{
     // font
     int font_size = 32;
     PFont font = createFont("../fonts/PressStart.ttf", this.font_size, true);
+
+    // global min/max rpm
+    int rpm_min = 0;
+    int rpm_max = 0;
 
     // the coordinates of curve to draw; must have 2n enteries so that (x/w,y/h) = topCoords[i], topCoords[i+1]
     // top left to top right
@@ -635,6 +634,11 @@ public class GearShifter{
     }
 
 
+    public void setMinMaxRpm(int min, int max){
+        this.rpm_min = min;
+        this.rpm_max = max;
+    }
+
 
     /*
     The minimum RPM to switch into a given gear
@@ -642,15 +646,19 @@ public class GearShifter{
     public int getMinRPM(GEAR cur_gear){
         switch(cur_gear){
             case ONE:
+                return rpm_min*1.2;
             case TWO:
+                return rpm_min*1.4;
             case THREE:
+                return rpm_min*1.6;
             case FOUR:
+                return rpm_min*1.8;
             case FIVE:
-                return 3000;
+                return rpm_min*2;
             case REVERSE:
-                return 1000;
+                return rpm_min;
             default:
-                return 3000;
+                return rpm_min;
         }
     }
 
@@ -662,15 +670,19 @@ public class GearShifter{
 
         switch(cur_gear){
             case ONE:
+                return rpm_max*0.2;
             case TWO:
+                return rpm_max*0.4;
             case THREE:
+                return rpm_max*0.6;
             case FOUR:
+                return rpm_max*0.8;
             case FIVE:
-                return 7000;
+                return rpm_max;
             case REVERSE:
-                return 1500;
+                return rpm_max*0.1;
             default:
-                return 7000;
+                return rpm_max;
         }
     }
 

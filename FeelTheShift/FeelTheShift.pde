@@ -49,6 +49,7 @@ int rpm_y = 50;
 int rpm_w = 200;
 int rpm_h = 100;
 int MAX_RPM = 8000;
+int MIN_RPM = 1000;
 
 int speed_x = rpm_x;
 int speed_y = 150;
@@ -247,7 +248,7 @@ void setup(){
   rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM);
   speed_sensor = new Meter(speed_x, speed_y, speed_w, speed_h, METER_TYPE.SPEED);
 
-  rpm_sensor.setRange(1000, MAX_RPM);
+  rpm_sensor.setRange(MIN_RPM, MAX_RPM);
   speed_sensor.setRange(0, MAX_SPEED);
 
   rpm_sensor.setFontSize(rpm_font_size);
@@ -287,6 +288,7 @@ void setup(){
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
   mechanism = new GearShifter(w, h, pixelsPerMeter);
+  mechanisim.setMinMaxRpm(MIN_RPM, MAX_RPM);
   
   /* Haptic Tool Initialization */
   mechanism.create_ee();
@@ -324,7 +326,6 @@ void draw(){
     gas.draw();
 
     end_button.draw();
-    //reset_button.draw();
 
     up_arrow.draw();
     down_arrow.draw();
