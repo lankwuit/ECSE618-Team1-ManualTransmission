@@ -17,11 +17,11 @@ public class Meter {
   PShape sensor;  // The PShape object
   PShape border; // The PShape object
   PFont font; // the font used to display the text
-  Color font_color = Color(255); // the color of the text
+  color font_color = color(255); // the color of the text
 
-  Color font_color_bad = #E85959;
-  Color font_color_good = #30D65F;
-  Color font_color_ok = #F4A862;
+  color font_color_bad = #E85959;
+  color font_color_good = #30D65F;
+  color font_color_ok = #F4A862;
 
 
 
@@ -93,6 +93,10 @@ public class Meter {
 
   public void setValue(String value) {
     this.value = value;
+  }
+
+  public int getValue() {
+    return int(this.value);
   }
 
   public void setFontSize(int size){
@@ -295,7 +299,7 @@ public class Meter {
   }
 
   // adjust the colour of the text based on the min and max values
-  void adjustColour(int min, int max) {
+  void adjustColour(float min, float max) {
     float val = float(this.value);
 
     if (val < min) {
@@ -309,6 +313,10 @@ public class Meter {
     } else {
       this.font_color = this.font_color_ok;
     }
+  }
+
+  public PFont getFont() {
+    return this.font;
   }
   
   public void press(){

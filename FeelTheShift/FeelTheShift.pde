@@ -288,7 +288,7 @@ void setup(){
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
   mechanism = new GearShifter(w, h, pixelsPerMeter);
-  mechanisim.setMinMaxRpm(MIN_RPM, MAX_RPM);
+  mechanism.setMinMaxRpm(MIN_RPM, MAX_RPM);
   
   /* Haptic Tool Initialization */
   mechanism.create_ee();
@@ -335,8 +335,9 @@ void draw(){
 
     // check the gear
     GEAR cur_gear = mechanism.getGear(pos_ee);
-    GEAR target_gear = getGearFromString(target_gear);
-    rpm_sensor.adjustColour(mechanism.getMinRPM(target_gear), mechanism.getMaxRPM(target_gear))
+    String target_gear_str = gear_seq.get(gear_seq_index);
+    GEAR target_gear = getGearFromString(target_gear_str);
+    rpm_sensor.adjustColour(mechanism.getMinRPM(target_gear), mechanism.getMaxRPM(target_gear));
     checkGear(cur_gear);
 
     // decrase rpm value every 2 frames
@@ -361,11 +362,11 @@ void draw(){
         down_arrow.press();
     }
 
-  }else if(rendering_force == false && game_state == 0){
+  }else if(rendering_force == false && game_state == 0){ // splash screen
     imageMode(CORNER);
     image(splashGif, 0 ,0, w, h);
 
-    // draw a rotatign circle at the center of the screen
+    // draw a rotating circle at the center of the screen
     pushMatrix();
     translate(w/2, h/2);
     rotate(frameCount * 0.01);
@@ -375,10 +376,33 @@ void draw(){
     ellipse(0, 0, 140 + 10*sin( radians(frameCount % 360))  , 140 + 10*sin( radians(frameCount % 360)) );
     popMatrix();
 
+    // draw insert knob text
+    String insert_knob_text = "INSERT KNOB";
+    textFont(score_text.getFont(), game_text_font_size); // specify font
+
+    // create a gradient for the text
+    color c1 = #E85959;
+    color c2 = #F4A862;
+
+    fill(lerpColor(c1, c2, 0.5*sin( radians(frameCount % 360)) + 0.5)); // set fill colour for text
+    textAlign(CENTER, CENTER);
+
+    //if(frameCount % baseFrameRate*2 == 0)
+    text(insert_knob_text, w/2, h/2 + 100);
+
+    // draw press x to start text
+    if(false){
+      String start_text = "PRESS X TO START";
+      textFont(score_text.getFont(), game_text_font_size); // specify font
+      fill(255); // set fill colour for text
+      textAlign(CENTER, CENTER);
+      text(start_text, w/2, h/2 + 100);
+    }
+
+    // draw the knob
     mechanism.draw_ee(pos_ee.x, pos_ee.y);
 
-  } else if (rendering_force == false && game_state == 2){
-    // end screen
+  } else if (rendering_force == false && game_state == 2){ // end screen
     imageMode(CORNER);
     image(endGif, 0 ,0, w, h);
 
@@ -513,7 +537,7 @@ boolean reachedTargetGear(GEAR cur_gear){
   return cur_gear == target;
 }
 
-Gear getGearFromString(String gear){
+GEAR getGearFromString(String gear){
   GEAR target = GEAR.NEUTRAL;
 
   if(gear == "R")
@@ -539,7 +563,8 @@ void checkGear(GEAR cur_gear){
       boolean targetGearReached = reachedTargetGear(cur_gear);
 
       boolean isGoodShift = true; // assume good shift
-      if(rpm_sensor.getValue() < mechanism.getMinRPM(cur_gear) || rpm_sensor.getValue() > mechanism.getMaxRPM(cur_gear)){
+      int cur_rpm = rpm_sensor.getValue();
+      if(cur_rpm < mechanism.getMinRPM(cur_gear) || cur_rpm > mechanism.getMaxRPM(cur_gear)){
         isGoodShift = false; // outside the rpm range to shift
       }
 

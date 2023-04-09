@@ -643,7 +643,7 @@ public class GearShifter{
     /*
     The minimum RPM to switch into a given gear
     */
-    public int getMinRPM(GEAR cur_gear){
+    public float getMinRPM(GEAR cur_gear){
         switch(cur_gear){
             case ONE:
                 return rpm_min*1.2;
@@ -666,7 +666,7 @@ public class GearShifter{
     /*
     The maximum RPM to switch into a given gear
     */
-    public int getMaxRPM(GEAR cur_gear){
+    public float getMaxRPM(GEAR cur_gear){
 
         switch(cur_gear){
             case ONE:
