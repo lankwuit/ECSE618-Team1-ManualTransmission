@@ -17,6 +17,12 @@ public class Meter {
   PShape sensor;  // The PShape object
   PShape border; // The PShape object
   PFont font; // the font used to display the text
+  Color font_color = Color(255); // the color of the text
+
+  Color font_color_bad = #E85959;
+  Color font_color_good = #30D65F;
+  Color font_color_ok = #F4A862;
+
 
 
   boolean show_icon = false; // if true, show an icon instead of text
@@ -221,20 +227,20 @@ public class Meter {
     rect(this.x + this.w/2, this.y + this.h/2, this.w, this.h, this.radius);
 
     // draw value below
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
     textFont(this.font, this.font_size*0.5); // specify font
     text(this.value, this.x + this.w/2, this.y + this.h + this.font_size * 0.5);
   }
 
   private void drawText(){
     textFont(this.font, this.font_size); // specify font
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
     textAlign(CENTER, CENTER);
     text(this.name, this.x + this.w/2, this.y + this.h/2);
   }
 
   private void drawGameText() {
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
     textFont(this.font, this.font_size); // specify font
     float name_size = textWidth(this.name);
     String top_text = "TARGET";
@@ -254,7 +260,7 @@ public class Meter {
 
   private void drawValue() {
     textFont(this.font, this.font_size); // specify font
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
 
     textAlign(RIGHT, CENTER);
     float value_size = textWidth("0000");
@@ -280,12 +286,29 @@ public class Meter {
     this.drawIcon();
 
     // draw the text below the pedal
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
     textAlign(CENTER, CENTER);
     textFont(this.font, this.font_size); // specify font
     text(this.name, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 1);
     textFont(this.font, this.font_size); // specify font
     text(this.value, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 2.5);
+  }
+
+  // adjust the colour of the text based on the min and max values
+  void adjustColour(int min, int max) {
+    float val = float(this.value);
+
+    if (val < min) {
+      this.font_color = this.font_color_bad;
+    } else if (val < 1.1*min) {
+      this.font_color = this.font_color_ok;
+    } else if (val > 0.9*max) {
+      this.font_color = this.font_color_ok;
+    } else if (val > max) {
+      this.font_color = this.font_color_bad;
+    } else {
+      this.font_color = this.font_color_ok;
+    }
   }
   
   public void press(){

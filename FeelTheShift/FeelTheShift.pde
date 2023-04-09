@@ -335,50 +335,9 @@ void draw(){
 
     // check the gear
     GEAR cur_gear = mechanism.getGear(pos_ee);
-    if(mechanism.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes      
-      boolean canChangeGear = shiftGear(cur_gear);
-      boolean targetGearReached = reachedTargetGear(cur_gear);
-
-      boolean isGoodShift = true; // assume good shift
-      if(rpm_sensor.getValue() < mechanism.getMinRPM(cur_gear) || rpm_sensor.getValue() > mechanism.getMaxRPM(cur_gear)){
-        isGoodShift = false; // outside the rpm range to shift
-      }
-
-      if(canChangeGear && isGoodShift && targetGearReached){ // have reached target gear and made a great shift
-        // good shift
-        println("Good shift! Current gear: " + cur_gear);
-        score_text.increaseValue(10); // 10 points for a good shift
-
-        // change the target to the next gear
-        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
-        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
-
-      }else if (!targetGearReached) { // did not reach target gear
-        println("Bad shift! Wrong gear: " + cur_gear);
-        score_text.decreaseValue(10); // 10 points penalty for a bad shift
-
-
-      }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
-        // good shift
-        println("Good shift! Current gear: " + cur_gear);
-        score_text.increaseValue(10); // 10 points for a good shift
-    
-      }else{ // reached target gear but made a bad shift
-
-        if(!canChangeGear){
-          println("Bad shift! Clutch not engaged");
-          score_text.decreaseValue(5); // 10 points penalty for a bad shift
-        }
-        if(!isGoodShift){
-          println("Bad shift! Wrong RPM: " + cur_rpm);
-          score_text.decreaseValue(5); // 10 points penalty for a bad shift
-        }
-
-        // change the target to the next gear
-        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
-        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
-      }
-    }
+    GEAR target_gear = getGearFromString(target_gear);
+    rpm_sensor.adjustColour(mechanism.getMinRPM(target_gear), mechanism.getMaxRPM(target_gear))
+    checkGear(cur_gear);
 
     // decrase rpm value every 2 frames
     if(frameCount % 2 == 0){
@@ -571,6 +530,54 @@ Gear getGearFromString(String gear){
     target = GEAR.FIVE;
 
   return target;
+}
+
+
+void checkGear(GEAR cur_gear){
+    if(mechanism.getPrevGear() != cur_gear){ // check if the gear has changed    
+      boolean canChangeGear = shiftGear(cur_gear);
+      boolean targetGearReached = reachedTargetGear(cur_gear);
+
+      boolean isGoodShift = true; // assume good shift
+      if(rpm_sensor.getValue() < mechanism.getMinRPM(cur_gear) || rpm_sensor.getValue() > mechanism.getMaxRPM(cur_gear)){
+        isGoodShift = false; // outside the rpm range to shift
+      }
+
+      if(canChangeGear && isGoodShift && targetGearReached){ // have reached target gear and made a great shift
+        // good shift
+        println("Good shift! Current gear: " + cur_gear);
+        score_text.increaseValue(10); // 10 points for a good shift
+
+        // change the target to the next gear
+        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
+        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+
+      }else if (!targetGearReached) { // did not reach target gear
+        println("Bad shift! Wrong gear: " + cur_gear);
+        score_text.decreaseValue(10); // 10 points penalty for a bad shift
+
+
+      }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
+        // good shift
+        println("Good shift! Current gear: " + cur_gear);
+        score_text.increaseValue(10); // 10 points for a good shift
+    
+      }else{ // reached target gear but made a bad shift
+
+        if(!canChangeGear){
+          println("Bad shift! Clutch not engaged");
+          score_text.decreaseValue(5); // 10 points penalty for a bad shift
+        }
+        if(!isGoodShift){
+          println("Bad shift! Wrong RPM: " + cur_rpm);
+          score_text.decreaseValue(5); // 10 points penalty for a bad shift
+        }
+
+        // change the target to the next gear
+        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
+        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+      }
+    }
 }
 
 /* simulation section **************************************************************************************************/
