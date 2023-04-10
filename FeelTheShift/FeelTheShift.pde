@@ -32,6 +32,11 @@ Gif backgroundGif;
 Gif splashGif;
 Gif endGif;
 
+/* title font */
+PFont title_font;
+String title_text = "FEEL THE SHIFT";
+int title_font_size = 64;
+
 /* brake, gas, clutch position definitions in pixels*/
 int gas_x = 200;
 int gas_y = 220;
@@ -192,8 +197,8 @@ void setup(){
    /*************************************************************************/
 
   // engine sound
-  engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
-  engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
+  //engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
+  //engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
   //engine_idle_sound.loop();
 
   engine_start = new SoundFile(this, "../audio/engine-start.wav");
@@ -286,6 +291,10 @@ void setup(){
   gas.setValue("D");
   gas.setFontSize(pedal_font_size);
 
+
+  // setup title font
+  title_font = createFont("../fonts/Disco Duck 3D Italic.otf", title_font_size, true);
+
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
   mechanism = new GearShifter(w, h, pixelsPerMeter);
   mechanism.setMinMaxRpm(MIN_RPM, MAX_RPM);
@@ -366,38 +375,64 @@ void draw(){
     imageMode(CORNER);
     image(splashGif, 0 ,0, w, h);
 
-    // draw a rotating circle at the center of the screen
-    pushMatrix();
-    translate(w/2, h/2);
-    rotate(frameCount * 0.01);
-    fill(0);
-    stroke(255);
-    strokeWeight(4);
-    ellipse(0, 0, 140 + 10*sin( radians(frameCount % 360))  , 140 + 10*sin( radians(frameCount % 360)) );
-    popMatrix();
-
-    // draw insert knob text
-    String insert_knob_text = "INSERT KNOB";
-    textFont(score_text.getFont(), game_text_font_size); // specify font
+    // draw the title
+    textFont(title_font, title_font_size); // specify font
+    fill(255);
+    stroke(0);
+    textAlign(CENTER, TOP);
+    text(title_text, w/2, 16);
 
     // create a gradient for the text
     color c1 = #E85959;
     color c2 = #F4A862;
 
+    // draw a rotating circle at the center of the screen
+    pushMatrix();
+    translate(w/2, h/2);
+    rotate(frameCount * 0.01); // rotate every frame
+    noFill();
+    stroke(c2);
+    strokeWeight(8);
+
+    ellipseMode(CENTER); // first two points are the x,y of the centre of the ellipse
+
+    // draw the arcs
+    int num_arcs = 4; // number of long arcs (total arcs = num_arcs*2)
+    float short_angle = PI/num_arcs/3.0; // angle of the short arcs (num_arcs * (x*2 + x) = 180 solve for x)
+    float long_angle = short_angle*2;
+    // empty angle between arcs
+    float empty_angle = PI/(num_arcs*2.0);
+
+    float start_angle = 0;
+    for(int i = 0; i < num_arcs; i++){ // draw the arcs
+      arc(0,0,140,140, start_angle, start_angle + long_angle); // long arc
+      start_angle += long_angle + empty_angle; // skip empty space and long arc
+      arc(0,0,140,140, start_angle, start_angle  + short_angle); // short arc
+      start_angle += short_angle + empty_angle; // skip empty spaces and short arc
+    }
+    popMatrix();
+
+    PVector pos = mechanism.getPosReltoCustomSpace(pos_ee);
+    boolean is_in_centre = pos.sub(new PVector(w/2, w/2)).mag() < 0.1;
+
+    // draw insert knob text
+    String insert_knob_text = "INSERT KNOB";
+    textFont(score_text.getFont(), game_text_font_size); // specify font
+
     fill(lerpColor(c1, c2, 0.5*sin( radians(frameCount % 360)) + 0.5)); // set fill colour for text
     textAlign(CENTER, CENTER);
 
-    //if(frameCount % baseFrameRate*2 == 0)
-    text(insert_knob_text, w/2, h/2 + 100);
+    if(!is_in_centre && sin( 10*radians(frameCount % 360)) >=0  )
+      text(insert_knob_text, w/2, h/2 + 100);
 
     // draw press x to start text
-    if(false){
-      String start_text = "PRESS X TO START";
-      textFont(score_text.getFont(), game_text_font_size); // specify font
-      fill(255); // set fill colour for text
-      textAlign(CENTER, CENTER);
+    String start_text = "PRESS X TO START";
+    textFont(score_text.getFont(), game_text_font_size); // specify font
+    fill(lerpColor(c1, c2, 0.5*sin( radians(frameCount % 360)) + 0.5)); // set fill colour for text
+    textAlign(CENTER, CENTER);
+    
+    if(is_in_centre && sin( 10*radians(frameCount % 360)) >=0  )
       text(start_text, w/2, h/2 + 100);
-    }
 
     // draw the knob
     mechanism.draw_ee(pos_ee.x, pos_ee.y);
@@ -440,8 +475,8 @@ void keyPressed(){
       
       main_screen_sound.amp(background_volume);
       main_screen_sound.loop();
-      engine_idle_sound.amp(engine_volume);
-      engine_idle_sound.loop();
+      // engine_idle_sound.amp(engine_volume);
+      // engine_idle_sound.loop();
 
       game_state = 1; // start game
       backgroundGif.loop(); // play the gif
@@ -486,7 +521,7 @@ void keyReleased(){
       
       backgroundGif.stop(); // stop the gif
       main_screen_sound.stop();
-      engine_idle_sound.stop();
+      // engine_idle_sound.stop();
       start_screen_sound.amp(background_volume);
       start_screen_sound.loop();
       score_text.setValue(0);
@@ -502,7 +537,7 @@ void keyReleased(){
     if(game_state == 1){
       // stop the game audio  
       main_screen_sound.stop();
-      engine_idle_sound.stop();
+      // engine_idle_sound.stop();
 
 
       game_state = 2; // end game

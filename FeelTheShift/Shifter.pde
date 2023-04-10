@@ -686,6 +686,12 @@ public class GearShifter{
         }
     }
 
+    public PVector getPosReltoCustomSpace(PVector posEE){
+        PVector posReltoCustomSpace = new PVector(0, 0);
+        posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
+        return posReltoCustomSpace;
+    }
+
 
     /** 
     * This functions sets the showForce variable to true or false
