@@ -85,8 +85,8 @@ int button_sep = button_w + 20;
 
 int button_font_size = 24;
 
-int arrow_x = 225;
-int arrow_y = 50;
+int arrow_x = 780;
+int arrow_y = 70;
 int arrow_sep = 75;
 PImage up_arrow_img, down_arrow_img;
 
@@ -276,7 +276,7 @@ void setup(){
   down_arrow_img = loadImage("../imgs/arrow_downshift.png");
 
   up_arrow = new Meter(arrow_x, arrow_y, up_arrow_img.width, up_arrow_img.height, METER_TYPE.ICON);
-  down_arrow = new Meter(arrow_x, arrow_y + arrow_sep, down_arrow_img.width, down_arrow_img.height, METER_TYPE.ICON);
+  down_arrow = new Meter(arrow_x, arrow_y, down_arrow_img.width, down_arrow_img.height, METER_TYPE.ICON);
   
   up_arrow.setIcon(up_arrow_img);
   down_arrow.setIcon(down_arrow_img);
@@ -374,9 +374,6 @@ void draw(){
     gas.draw();
 
     end_button.draw();
-
-    up_arrow.draw();
-    down_arrow.draw();
     
     mechanism.draw();
     mechanism.draw_ee(pos_ee.x, pos_ee.y);
@@ -406,9 +403,13 @@ void draw(){
 
     // highlight the up/down arrow based on the current and target gear
     if( shouldShiftUp(cur_gear) ){
+        up_arrow.draw();
         up_arrow.press();
+        down_arrow.release();
     }else{
+        down_arrow.draw();
         down_arrow.press();
+        up_arrow.release();
     }
 
   }else if(rendering_force == false && game_state == 0){ // splash screen
