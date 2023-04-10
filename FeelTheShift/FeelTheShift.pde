@@ -615,6 +615,7 @@ void keyPressed(){
 
   if(key == 'e' || key == 'E'){
     end_button.press();
+    end_button.setValue("RELEASE E");
   }
 
   if(key == 'f' || key == 'F'){

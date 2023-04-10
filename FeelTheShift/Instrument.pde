@@ -285,7 +285,7 @@ public class Meter {
   private void drawButton(){
     rectMode(CENTER);
     fill(0);
-
+    strokeWeight(4);
     if(this.pressed)
       stroke(0);
      else

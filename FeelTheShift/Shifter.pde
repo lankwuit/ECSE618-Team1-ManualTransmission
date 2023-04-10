@@ -309,8 +309,8 @@ public class GearShifter{
         // initial x position is refferred to the coordinate of H
         this.endEffector = createShape(ELLIPSE, topCoords[14]*w, ballCreationYPosition, 2*rEE*scale, 2*rEE*scale);
         this.endEffector.setStroke(color(0));
-        this.endEffector.setStrokeWeight(5);
-        this.endEffector.setFill(color(0,0,0));
+        this.endEffector.setStrokeWeight(0);
+        this.endEffector.setFill(color(#F4A862));
     }   
     
     float[] curvecenter = {
