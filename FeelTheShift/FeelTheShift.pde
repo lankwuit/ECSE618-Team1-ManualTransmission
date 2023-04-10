@@ -110,13 +110,6 @@ StringList gear_seq = new StringList(new String[] {
   });
 int gear_seq_index = 0;
 
-//for scoring
-int shiftCount = 0;
-boolean shiftLast =false;
-boolean shiftSecondLast=false;
-
-
-
 SoundFile engine_rev_sound, engine_idle_sound;
 SoundFile engine_start, start_screen_sound, main_screen_sound;
 float background_volume = 0.05; // background music volume
@@ -128,13 +121,14 @@ Meter end_button, reset_button;
 Meter up_arrow, down_arrow;
 
 // for endscreen uses
-Meter title_text, grade_text, record_text1 ,record_text2, total_score_text, timeend_text;
-int endscreen;
+Meter grade_text, record_text1 ,record_text2, total_score_text, timeend_text;
+// set up initial endscreen to show the end result (0), before scoreboard (1)
+int endscreen_state = 0;
 // endscreen use ends
 
 
 int current_time = 0;
-int last_time = 0;
+long last_time = 0;
 
 /* framerate definition ************************************************************************************************/
 long              baseFrameRate                       = 120;
@@ -221,7 +215,7 @@ void setup(){
   // game text
   target_text = new Meter(game_text_x, game_text_y, rpm_w, rpm_h, METER_TYPE.TEXT);
   score_text = new Meter(game_text_x, game_text_y + game_text_sep, rpm_w, rpm_h, METER_TYPE.TEXT);
-  time_text = new Meter(game_text_x, game_text_y + game_text_sep*2, rpm_w, rpm_h, METER_TYPE.TEXT);
+  time_text = new Meter(game_text_x, game_text_y + game_text_sep*2, rpm_w, rpm_h, METER_TYPE.CLOCK);
 
   target_text.setName("TARGET");
   score_text.setName("SCORE");
@@ -231,29 +225,24 @@ void setup(){
   score_text.setFontSize(game_text_font_size);
   time_text.setFontSize(game_text_font_size);
 
-  score_text.setRange(0, 999);
-
   target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
 
   // end game condition texts
-    // title
-  title_text = new Meter(226, 16, 1000-226*2, 30, METER_TYPE.TITLE);
-  title_text.setName("FEEL THE SHIFT");
-  title_text.setTitleSize(64);
-    // screen 1 with grade conclusion, records, and name
-  grade_text = new Meter(32+32, 16+64+19+32+5, 1000-226*2, 30, METER_TYPE.GRADE);
+  // screen 1 with grade conclusion, records, and name
+  grade_text = new Meter(32 + 32, 16+title_font_size+19+32+5, -1, -1, METER_TYPE.GRADE);
   grade_text.setName("GRADE");
   grade_text.setFontSize(32);
 
-  record_text1 = new Meter(grade_text.x+textWidth(grade_text.name)*4+32, 16+64+19+32, 2, 30, METER_TYPE.RECORD);
-  record_text1.setName("RECORD1");
+  // first record text 
+  record_text1 = new Meter(226+32, 16+title_font_size+19+32, -1, -1, METER_TYPE.RECORD);
+  record_text1.setName("GREAT SHIFT");
   record_text1.setFontSize(32);
 
-  record_text2 = new Meter(record_text1.x, record_text1.y+textWidth(record_text1.name), 2, 30, METER_TYPE.RECORD);
-  record_text2.setName("RECORD2");
+  record_text2 = new Meter(record_text1.x, record_text1.y+textWidth(record_text1.name), -1, -1, METER_TYPE.RECORD);
+  record_text2.setName("POOR SHIFT");
   record_text2.setFontSize(32);
 
-  total_score_text= new Meter(record_text2.x, record_text2.y+textWidth(record_text2.name), 2, 30, METER_TYPE.RECORD);
+  total_score_text= new Meter(record_text2.x, record_text2.y+textWidth(record_text2.name), -1, -1, METER_TYPE.RECORD);
   total_score_text.setName("TOTAL");
   total_score_text.setFontSize(32);
   
@@ -261,8 +250,8 @@ void setup(){
   timeend_text.setName("TIME");
   timeend_text.setFontSize(16);
 
-  
-
+  record_text1.setShift(true); // good shift text
+  record_text2.setShift(false); // bad shift text
 
 
   // start & reset buttons
@@ -298,6 +287,7 @@ void setup(){
   rpm_sensor.setFontSize(rpm_font_size);
   speed_sensor.setFontSize(rpm_font_size);
 
+  rpm_sensor.setValue(MIN_RPM);
   //rpm_sensor.setSound(engine_rev_sound);
   
   // pedels icons
@@ -333,8 +323,6 @@ void setup(){
 
   // setup title font
   title_font = createFont("../fonts/Disco Duck 3D Italic.otf", title_font_size, true);
-  // set up initial endscreen to show the end result, before scoreboard
-  endscreen = 0;
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
   mechanism = new GearShifter(w, h, pixelsPerMeter);
@@ -389,28 +377,6 @@ void draw(){
     GEAR target_gear = getGearFromString(target_gear_str);
     rpm_sensor.adjustColour(mechanism.getMinRPM(target_gear), mechanism.getMaxRPM(target_gear));
     checkGear(cur_gear);
-    // int indx = frameCount % 6;
-    // GEAR cur_gear = mechanisim.getGear(pos_ee);
-    // if(mechanisim.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes
-    //   boolean isGoodShift = shiftGear(cur_gear);
-
-    //   if(isGoodShift){
-    //     // good shift
-    //     println("Good shift! Current gear: " + cur_gear);
-    //     score_text.increaseValue(10); // 10 points for a good shift
-    //     target_text.setValue("GEAR " + target_gears[indx]);
-    //     shiftSecondLast = shiftLast;
-    //     shiftLast = true;
-    //     shiftCount=shiftCount+1;
-    //   }else{
-    //     // bad shift
-    //     println("Bad shift!");
-    //     score_text.decreaseValue(10); // 10 points penalty for a bad shift
-    //     shiftSecondLast = shiftLast;
-    //     shiftLast = false;
-    //     shiftCount=shiftCount+1;
-    //   }
-    // }
 
     // decrase rpm value every 2 frames
     if(frameCount % 2 == 0){
@@ -422,8 +388,9 @@ void draw(){
       speed_sensor.decreaseValue();
     }
 
-    // increase time every 5 frames
-    if(frameCount % 10 == 0){
+    // increase time every 1 second
+    if(millis() - last_time > 1000){
+      last_time = millis();
       time_text.increaseValue(1);
     }
 
@@ -504,29 +471,41 @@ void draw(){
     imageMode(CORNER);
     image(endGif, 0 ,0, w, h);
 
-    // draw a dark semi-transparent rectangle frame in the lower bottom
-    rectMode(CENTER);
+    // draw the title
+    textFont(title_font, title_font_size); // specify font
+    fill(255);
+    stroke(0);
+    textAlign(CENTER, TOP);
+    text(title_text, w/2, 16);
+
+    // create a gradient for the text
+    color c1 = #E85959;
+    color c2 = #F4A862;
+
+    // draw a dark semi-transparent rectangle frame in the bottom half of the screen
+    rectMode(CORNER);
     fill(0,0,0, 70);
     strokeWeight(0);
-    rect(500, 225, 945, 292);
-    title_text.draw();
+    stroke(c1);
+    
+    rect(32, 16 + title_font_size + 19, 945, 292);
 
-// ! for only the end screen, not used in the scoreboard
-    grade_text.setGrading(score_text.value);
-    grade_text.draw();
-    record_text1.setShift(shiftSecondLast);
-    record_text1.setShiftCount(shiftCount-1<0 ?  0: shiftCount-1);
-    record_text1.draw();
-    record_text2.setShift(shiftLast);
-    record_text2.setShiftCount(shiftCount);
-    record_text2.draw();
+    // endscreen state 0
 
-    total_score_text.setValue(score_text.value);
-    total_score_text.draw();
-    timeend_text.setValue(time_text.value);
-    timeend_text.draw();
+    if(endscreen_state == 0){
+      // ! for only the end screen, not used in the scoreboard
+      grade_text.setGrading(score_text.getValue());
+      grade_text.draw();
+      record_text1.draw();
+      record_text2.draw();
 
-    // TODO: draw the end screen scoreboard
+      total_score_text.setValue(score_text.getValue());
+      total_score_text.draw();
+      timeend_text.setValue(time_text.getValue());
+      timeend_text.draw();
+    }else{
+       // TODO: draw the end screen scoreboard
+    }
     
 
   }
@@ -694,6 +673,8 @@ void checkGear(GEAR cur_gear){
         // good shift
         println("Good shift! Current gear: " + cur_gear);
         score_text.increaseValue(10); // 10 points for a good shift
+        record_text1.addShiftCount(); // add to the shift count
+        record_text1.increaseValue(10); // add to the shift score
 
         // change the target to the next gear
         gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
@@ -702,23 +683,31 @@ void checkGear(GEAR cur_gear){
       }else if (!targetGearReached) { // did not reach target gear
         println("Bad shift! Wrong gear: " + cur_gear);
         score_text.decreaseValue(10); // 10 points penalty for a bad shift
+        record_text2.addShiftCount(); // add to the shift count
+        record_text2.increaseValue(10); // add to the shift score
 
 
       }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
         // good shift
         println("Good shift! Current gear: " + cur_gear);
         score_text.increaseValue(10); // 10 points for a good shift
+        record_text1.addShiftCount(); // add to the shift count
+        record_text1.increaseValue(10); // add to the shift score
     
       }else{ // reached target gear but made a bad shift
 
         if(!canChangeGear){
           println("Bad shift! Clutch not engaged");
           score_text.decreaseValue(5); // 10 points penalty for a bad shift
+          record_text2.increaseValue(5); // add to the shift score
         }
         if(!isGoodShift){
           println("Bad shift! Wrong RPM: " + cur_rpm);
           score_text.decreaseValue(5); // 10 points penalty for a bad shift
+          record_text2.increaseValue(5); // add to the shift score
         }
+
+        record_text2.addShiftCount(); // add to the shift count
 
         // change the target to the next gear
         gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
@@ -736,9 +725,9 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-     if(haplyBoard.data_available()){
+    // if(haplyBoard.data_available()){
       /* GET END-EFFECTOR STATE (TASK SPACE) */
-      widgetOne.device_read_data();
+    //  widgetOne.device_read_data();
     
     //   angles.set(widgetOne.get_device_angles()); 
     //   pos_ee.set(widgetOne.get_device_position(angles.array()));
@@ -749,7 +738,7 @@ class SimulationThread implements Runnable{
     //     mechanism.forcerender(pos_ee);
 
 
-    //  }    
+    //}    
     //  torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
     //  widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/

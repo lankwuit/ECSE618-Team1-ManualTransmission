@@ -1,6 +1,6 @@
 import processing.sound.*;
 
-enum METER_TYPE{RPM, SPEED, PEDAL, BUTTON, TEXT, ICON, TITLE, GRADE, RECORD, TIME, OTHER}; // types of meters
+enum METER_TYPE{RPM, SPEED, PEDAL, BUTTON, TEXT, ICON, GRADE, RECORD, TIME, CLOCK, OTHER}; // types of meters
 
 // class the creates and displays sensor data
 public class Meter {
@@ -11,6 +11,7 @@ public class Meter {
 
 
   String value; // the printed value
+  int value_int;
   int font_size;
   int title_size;
   String name; // either "RPM" or "KM/HR"
@@ -35,8 +36,11 @@ public class Meter {
   char Grading = 'Z';
   
   // min and max values for value
-  int min_value = 0;
-  int max_value = 100;
+  int min_value = Integer.MIN_VALUE;
+  int max_value = Integer.MAX_VALUE;
+
+  boolean shift; // to determine if the previous is a good shift or a bad shift
+  int shiftCount; // count for shift
 
   // the type of instrument
   METER_TYPE type;
@@ -71,6 +75,7 @@ public class Meter {
 
       case BUTTON:
       case TEXT:
+      case CLOCK:
         this.setValue(0);
         break;
 
@@ -96,10 +101,17 @@ public class Meter {
         this.value = nf(value, 3, 0);
         break;
       case TEXT:
+      case RECORD:
+      case TIME:
         this.value = nf(value, 4, 0);
         break;
-      case TIME:
+
+      case CLOCK:
+        int minutes = value / 60;
+        int seconds = value % 60;
+        this.value = nf(minutes, 2, 0) + ":" + nf(seconds, 2, 0);
         break;
+
     }
   }
 
@@ -108,6 +120,8 @@ public class Meter {
   }
 
   public int getValue() {
+    if(this.type == METER_TYPE.CLOCK)
+      return value_int;
     return int(this.value);
   }
 
@@ -130,6 +144,18 @@ public class Meter {
 
 
   public void increaseValue(int val){
+    if(this.type == METER_TYPE.CLOCK){
+      value_int++;
+      this.setValue(value_int);
+      return;
+    }
+
+    if(this.type == METER_TYPE.RECORD){
+      value_int++;
+      this.setValue(value_int);
+      return;
+    }
+
     int cur_val = int(this.value);
     cur_val += val;
     if (cur_val > this.max_value) // clamp the value to the max value
@@ -203,8 +229,8 @@ public class Meter {
     this.icon = img;
   }
 
-  public void setGrading(String score){
-    int scores = Integer.parseInt(score);
+  public void setGrading(int score){
+    int scores = score;
     if (scores > 400){
       this.Grading = 'A';
     } else if (scores > 300){
@@ -228,6 +254,7 @@ public class Meter {
         this.drawValue(); // draw the text
         break;
 
+      case CLOCK:
       case TEXT:
         this.drawGameText(); // draw the text
         break;
@@ -296,14 +323,13 @@ public class Meter {
     text(this.Grading, this.x + 0.5*name_size, this.y + this.font_size*1.8);
   }
 
-  boolean shift; // to determine if the previous is a good shift or a bad shift
-  int shiftCount;
   private void setShift(boolean stat){
     this.shift = stat;
   }
 
-  private void setShiftCount(int count){
-    this.shiftCount = count;
+
+  public void addShiftCount(){
+    this.shiftCount++;
   }
   private void drawRecord(){
     textFont(this.font, this.font_size); // specify font 
@@ -315,35 +341,46 @@ public class Meter {
       return;
     }
     
+    // draw the shift count
     textAlign(LEFT, CENTER);
     String temp = nf(this.shiftCount,3);
     text(temp, this.x, this.y);
+
+    // draw the name
     float count_size = textWidth(temp);
     textAlign(LEFT, CENTER);
+    text(this.name, this.x + count_size+40, this.y);
+
+    // draw the score
+    textAlign(RIGHT, CENTER);
     if(this.shift){
       //good shift
-      text("GOOD SHIFT", this.x + count_size+40, this.y);
-      textAlign(RIGHT, CENTER);
-      text("+ 10", 945, this.y);
+      text( "+" + this.value, 945, this.y);
     }else{
       //bad shift
-      text(" BAD SHIFT", this.x + count_size+40, this.y);
-      textAlign(RIGHT, CENTER);
-      text("- 10", 945, this.y);
+      text("-" + this.value, 945, this.y);
     }
   }  
   private void drawTime(){
     textFont(this.font, this.font_size); // specify font 
     fill(255); // set fill colour for text   
-    textAlign(RIGHT, CENTER);
-    text(str(Integer.parseInt(this.value)/60) +" MINUTES", this.x, this.y);    
-    textAlign(RIGHT, CENTER);
-    text(str(Integer.parseInt(this.value)%60) +" SECONDS", this.x, this.y+20);
-    float time_size = textWidth(str(Integer.parseInt(this.value)/60));
-    textAlign(RIGHT, CENTER);
-    text("TIME:", this.x-150-4, this.y);
-  }
+    
 
+    int time = Integer.parseInt(this.value);
+    String minute_text = str(time/60) +" MINUTE(S)";
+    String second_text = str(time%60) +" SECOND(S)";
+
+    textAlign(RIGHT, CENTER);
+    text(minute_text, this.x, this.y);    
+
+    textAlign(RIGHT, CENTER);
+    text(second_text, this.x, this.y+20);
+
+
+    float time_size = textWidth(minute_text);
+    textAlign(RIGHT, CENTER);
+    text(this.name + ":", this.x-time_size - 4, this.y);
+  }
 
 
   private void drawGameText() {

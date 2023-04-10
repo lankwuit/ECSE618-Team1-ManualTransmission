@@ -1,5 +1,3 @@
-import java.util.Map;
-
 
 enum GEAR{REVERSE, NEUTRAL, ONE, TWO, THREE, FOUR, FIVE}; // types of meters
 
