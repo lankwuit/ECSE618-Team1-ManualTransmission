@@ -32,6 +32,11 @@ Gif backgroundGif;
 Gif splashGif;
 Gif endGif;
 
+/* title font */
+PFont title_font;
+String title_text = "FEEL THE SHIFT";
+int title_font_size = 64;
+
 /* brake, gas, clutch position definitions in pixels*/
 int gas_x = 200;
 int gas_y = 220;
@@ -49,6 +54,7 @@ int rpm_y = 50;
 int rpm_w = 200;
 int rpm_h = 100;
 int MAX_RPM = 8000;
+int MIN_RPM = 1000;
 
 int speed_x = rpm_x;
 int speed_y = 150;
@@ -79,13 +85,12 @@ int button_sep = button_w + 20;
 
 int button_font_size = 24;
 
-int arrow_x = 225;
-int arrow_y = 50;
+int arrow_x = 780;
+int arrow_y = 70;
 int arrow_sep = 75;
 PImage up_arrow_img, down_arrow_img;
 
 final String[] target_gears = { "1", "2", "3", "4", "5", "R" };
-
 /*
 
 Easy sequence: 1, 2, 3, 4, 5 (acceleration)
@@ -96,12 +101,14 @@ Med Sequence: 1, 2, 3, 2, 1, R, N (acceleration, deceleration, reverse)
 Hard sequence: 1, 2, 1, R, N, 2 (acceleration, deceleration, reverse)
 
 */
-//for scoring
-int shiftCount = 0;
-boolean shiftLast =false;
-boolean shiftSecondLast=false;
 
-
+StringList gear_seq = new StringList(new String[] {
+  "1","2", "3", "4", "5",
+  "4", "3", "2", "1", "N",
+  "1", "2", "3", "2", "1", "R", "N",
+  "1", "2", "1", "R", "N", "2"
+  });
+int gear_seq_index = 0;
 
 SoundFile engine_rev_sound, engine_idle_sound;
 SoundFile engine_start, start_screen_sound, main_screen_sound;
@@ -114,13 +121,18 @@ Meter end_button, reset_button;
 Meter up_arrow, down_arrow;
 
 // for endscreen uses
-Meter title_text, grade_text, record_text1 ,record_text2, total_score_text, timeend_text;
-int endscreen;
+Meter grade_text, record_text1 ,record_text2, total_score_text, timeend_text;
+// set up initial endscreen to show the end result (0), before scoreboard (1)
+int endscreen_state = 0;
+String user_name = "";
+String tmp_name = "____";
+
+JSONArray scores_object;
 // endscreen use ends
 
 
 int current_time = 0;
-int last_time = 0;
+long last_time = 0;
 
 /* framerate definition ************************************************************************************************/
 long              baseFrameRate                       = 120;
@@ -143,8 +155,8 @@ PVector           pos_ee                              = new PVector(0, 0);
 PVector           f_ee                                = new PVector(0, 0); 
 
 
-/* define gear mechanisim */
-GearShifter mechanisim;
+/* define gear mechanism */
+GearShifter mechanism;
 
 /* end elements definition *********************************************************************************************/  
 
@@ -175,26 +187,26 @@ void setup(){
 
 
    /*************************************************************************/
-   haplyBoard          = new Board(this, "COM9", 0);
-   widgetOne           = new Device(widgetOneID, haplyBoard);
-   pantograph          = new Pantograph();
+  //  haplyBoard          = new Board(this, "COM9", 0);
+  //  widgetOne           = new Device(widgetOneID, haplyBoard);
+  //  pantograph          = new Pantograph();
   
-   widgetOne.set_mechanism(pantograph);
+  //  widgetOne.set_mechanism(pantograph);
   
-   ////start: added to fix inverse motion of the ball
-   widgetOne.add_actuator(1, CCW, 2);
-   widgetOne.add_actuator(2, CW, 1);
+  //  ////start: added to fix inverse motion of the ball
+  //  widgetOne.add_actuator(1, CCW, 2);
+  //  widgetOne.add_actuator(2, CW, 1);
 
-   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-   widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-   widgetOne.device_set_parameters();
+  //  widgetOne.device_set_parameters();
    /*************************************************************************/
 
   // engine sound
-  engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
-  engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
+  //engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
+  //engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
   //engine_idle_sound.loop();
 
   engine_start = new SoundFile(this, "../audio/engine-start.wav");
@@ -207,7 +219,7 @@ void setup(){
   // game text
   target_text = new Meter(game_text_x, game_text_y, rpm_w, rpm_h, METER_TYPE.TEXT);
   score_text = new Meter(game_text_x, game_text_y + game_text_sep, rpm_w, rpm_h, METER_TYPE.TEXT);
-  time_text = new Meter(game_text_x, game_text_y + game_text_sep*2, rpm_w, rpm_h, METER_TYPE.TEXT);
+  time_text = new Meter(game_text_x, game_text_y + game_text_sep*2, rpm_w, rpm_h, METER_TYPE.CLOCK);
 
   target_text.setName("TARGET");
   score_text.setName("SCORE");
@@ -217,29 +229,24 @@ void setup(){
   score_text.setFontSize(game_text_font_size);
   time_text.setFontSize(game_text_font_size);
 
-  score_text.setRange(0, 999);
-
-  target_text.setValue("GEAR " + target_gears[0]);
+  target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
 
   // end game condition texts
-    // title
-  title_text = new Meter(226, 16, 1000-226*2, 30, METER_TYPE.TITLE);
-  title_text.setName("FEEL THE SHIFT");
-  title_text.setTitleSize(64);
-    // screen 1 with grade conclusion, records, and name
-  grade_text = new Meter(32+32, 16+64+19+32+5, 1000-226*2, 30, METER_TYPE.GRADE);
+  // screen 1 with grade conclusion, records, and name
+  grade_text = new Meter(32 + 32, 16+title_font_size+19+32+5, -1, -1, METER_TYPE.GRADE);
   grade_text.setName("GRADE");
   grade_text.setFontSize(32);
 
-  record_text1 = new Meter(grade_text.x+textWidth(grade_text.name)*4+32, 16+64+19+32, 2, 30, METER_TYPE.RECORD);
-  record_text1.setName("RECORD1");
+  // first record text 
+  record_text1 = new Meter(226+32, 16+title_font_size+19+32, -1, -1, METER_TYPE.RECORD);
+  record_text1.setName("GREAT SHIFT");
   record_text1.setFontSize(32);
 
-  record_text2 = new Meter(record_text1.x, record_text1.y+textWidth(record_text1.name), 2, 30, METER_TYPE.RECORD);
-  record_text2.setName("RECORD2");
+  record_text2 = new Meter(record_text1.x, record_text1.y+textWidth(record_text1.name), -1, -1, METER_TYPE.RECORD);
+  record_text2.setName("POOR SHIFT");
   record_text2.setFontSize(32);
 
-  total_score_text= new Meter(record_text2.x, record_text2.y+textWidth(record_text2.name), 2, 30, METER_TYPE.RECORD);
+  total_score_text= new Meter(record_text2.x, record_text2.y+textWidth(record_text2.name), -1, -1, METER_TYPE.RECORD);
   total_score_text.setName("TOTAL");
   total_score_text.setFontSize(32);
   
@@ -247,8 +254,8 @@ void setup(){
   timeend_text.setName("TIME");
   timeend_text.setFontSize(16);
 
-  
-
+  record_text1.setShift(true); // good shift text
+  record_text2.setShift(false); // bad shift text
 
 
   // start & reset buttons
@@ -269,7 +276,7 @@ void setup(){
   down_arrow_img = loadImage("../imgs/arrow_downshift.png");
 
   up_arrow = new Meter(arrow_x, arrow_y, up_arrow_img.width, up_arrow_img.height, METER_TYPE.ICON);
-  down_arrow = new Meter(arrow_x, arrow_y + arrow_sep, down_arrow_img.width, down_arrow_img.height, METER_TYPE.ICON);
+  down_arrow = new Meter(arrow_x, arrow_y, down_arrow_img.width, down_arrow_img.height, METER_TYPE.ICON);
   
   up_arrow.setIcon(up_arrow_img);
   down_arrow.setIcon(down_arrow_img);
@@ -278,12 +285,13 @@ void setup(){
   rpm_sensor = new Meter(rpm_x, rpm_y, rpm_w, rpm_h, METER_TYPE.RPM);
   speed_sensor = new Meter(speed_x, speed_y, speed_w, speed_h, METER_TYPE.SPEED);
 
-  rpm_sensor.setRange(1000, MAX_RPM);
+  rpm_sensor.setRange(MIN_RPM, MAX_RPM);
   speed_sensor.setRange(0, MAX_SPEED);
 
   rpm_sensor.setFontSize(rpm_font_size);
   speed_sensor.setFontSize(rpm_font_size);
 
+  rpm_sensor.setValue(MIN_RPM);
   //rpm_sensor.setSound(engine_rev_sound);
   
   // pedels icons
@@ -316,14 +324,22 @@ void setup(){
   gas.setValue("D");
   gas.setFontSize(pedal_font_size);
 
-  // set up initial endscreen to show the end result, before scoreboard
-  endscreen = 0;
+
+  // scores file setup (load file)
+  scores_object = loadJSONArray("scores.json");
+  if (scores_object == null) {
+    scores_object = new JSONArray();
+  }
+
+  // setup title font
+  title_font = createFont("../fonts/Disco Duck 3D Italic.otf", title_font_size, true);
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
-  mechanisim = new GearShifter(w, h, pixelsPerMeter);
+  mechanism = new GearShifter(w, h, pixelsPerMeter);
+  mechanism.setMinMaxRpm(MIN_RPM, MAX_RPM);
   
   /* Haptic Tool Initialization */
-  mechanisim.create_ee();
+  mechanism.create_ee();
 
   
   /* setup framerate speed */
@@ -358,37 +374,16 @@ void draw(){
     gas.draw();
 
     end_button.draw();
-    //reset_button.draw();
-
-    up_arrow.draw();
-    down_arrow.draw();
     
-    mechanisim.draw();
-    mechanisim.draw_ee(pos_ee.x, pos_ee.y);
+    mechanism.draw();
+    mechanism.draw_ee(pos_ee.x, pos_ee.y);
 
     // check the gear
-    int indx = frameCount % 6;
-    GEAR cur_gear = mechanisim.getGear(pos_ee);
-    if(mechanisim.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes
-      boolean isGoodShift = shiftGear(cur_gear);
-
-      if(isGoodShift){
-        // good shift
-        println("Good shift! Current gear: " + cur_gear);
-        score_text.increaseValue(10); // 10 points for a good shift
-        target_text.setValue("GEAR " + target_gears[indx]);
-        shiftSecondLast = shiftLast;
-        shiftLast = true;
-        shiftCount=shiftCount+1;
-      }else{
-        // bad shift
-        println("Bad shift!");
-        score_text.decreaseValue(10); // 10 points penalty for a bad shift
-        shiftSecondLast = shiftLast;
-        shiftLast = false;
-        shiftCount=shiftCount+1;
-      }
-    }
+    GEAR cur_gear = mechanism.getGear(pos_ee);
+    String target_gear_str = gear_seq.get(gear_seq_index);
+    GEAR target_gear = getGearFromString(target_gear_str);
+    rpm_sensor.adjustColour(mechanism.getMinRPM(target_gear), mechanism.getMaxRPM(target_gear));
+    checkGear(cur_gear);
 
     // decrase rpm value every 2 frames
     if(frameCount % 2 == 0){
@@ -400,70 +395,176 @@ void draw(){
       speed_sensor.decreaseValue();
     }
 
-    // increase time every 5 frames
-    if(frameCount % 10 == 0){
+    // increase time every 1 second
+    if(millis() - last_time > 1000){
+      last_time = millis();
       time_text.increaseValue(1);
     }
 
-    GEAR target = GEAR.NEUTRAL;
-    if(target_gears[indx] == "R")
-      target = GEAR.REVERSE;
-    else if(target_gears[indx] == "1")
-      target = GEAR.ONE;
-    else if(target_gears[indx] == "2")
-      target = GEAR.TWO;
-    else if(target_gears[indx] == "3")
-      target = GEAR.THREE;
-    else if(target_gears[indx] == "4")
-      target = GEAR.FOUR;
-    else if(target_gears[indx] == "5")
-      target = GEAR.FIVE;
+    // highlight the up/down arrow based on the current and target gear
+    if( shouldShiftUp(cur_gear) ){
+        up_arrow.draw();
+        up_arrow.press();
+        down_arrow.release();
+    }else{
+        down_arrow.draw();
+        down_arrow.press();
+        up_arrow.release();
+    }
 
-
-  }else if(rendering_force == false && game_state == 0){
+  }else if(rendering_force == false && game_state == 0){ // splash screen
     imageMode(CORNER);
     image(splashGif, 0 ,0, w, h);
 
-    // draw a rotatign circle at the center of the screen
+    // draw the title
+    textFont(title_font, title_font_size); // specify font
+    fill(255);
+    stroke(0);
+    textAlign(CENTER, TOP);
+    text(title_text, w/2, 16);
+
+    // create a gradient for the text
+    color c1 = #E85959;
+    color c2 = #F4A862;
+
+    // draw a rotating circle at the center of the screen
     pushMatrix();
     translate(w/2, h/2);
-    rotate(frameCount * 0.01);
-    fill(0);
-    stroke(255);
-    strokeWeight(4);
-    ellipse(0, 0, 140 + 10*sin( radians(frameCount % 360))  , 140 + 10*sin( radians(frameCount % 360)) );
+    rotate(frameCount * 0.01); // rotate every frame
+    noFill();
+    stroke(c2);
+    strokeWeight(8);
+
+    ellipseMode(CENTER); // first two points are the x,y of the centre of the ellipse
+
+    // draw the arcs
+    int num_arcs = 4; // number of long arcs (total arcs = num_arcs*2)
+    float short_angle = PI/num_arcs/3.0; // angle of the short arcs (num_arcs * (x*2 + x) = 180 solve for x)
+    float long_angle = short_angle*2;
+    // empty angle between arcs
+    float empty_angle = PI/(num_arcs*2.0);
+
+    float start_angle = 0;
+    for(int i = 0; i < num_arcs; i++){ // draw the arcs
+      arc(0,0,140,140, start_angle, start_angle + long_angle); // long arc
+      start_angle += long_angle + empty_angle; // skip empty space and long arc
+      arc(0,0,140,140, start_angle, start_angle  + short_angle); // short arc
+      start_angle += short_angle + empty_angle; // skip empty spaces and short arc
+    }
     popMatrix();
 
-    mechanisim.draw_ee(pos_ee.x, pos_ee.y);
+    PVector pos = mechanism.getPosReltoCustomSpace(pos_ee);
+    boolean is_in_centre = pos.sub(new PVector(w/2, w/2)).mag() < 0.1;
 
-  } else if (rendering_force == false && game_state == 2){
-    // end screen
+    // draw insert knob text
+    String insert_knob_text = "INSERT KNOB";
+    textFont(score_text.getFont(), game_text_font_size); // specify font
+
+    fill(lerpColor(c1, c2, 0.5*sin( radians(frameCount % 360)) + 0.5)); // set fill colour for text
+    textAlign(CENTER, CENTER);
+
+    if(!is_in_centre && sin( 10*radians(frameCount % 360)) >=0  )
+      text(insert_knob_text, w/2, h/2 + 100);
+
+    // draw press x to start text
+    String start_text = "PRESS X TO START";
+    textFont(score_text.getFont(), game_text_font_size); // specify font
+    fill(lerpColor(c1, c2, 0.5*sin( radians(frameCount % 360)) + 0.5)); // set fill colour for text
+    textAlign(CENTER, CENTER);
+    
+    if(is_in_centre && sin( 10*radians(frameCount % 360)) >=0  )
+      text(start_text, w/2, h/2 + 100);
+
+    // draw the knob
+    mechanism.draw_ee(pos_ee.x, pos_ee.y);
+
+  } else if (rendering_force == false && game_state == 2){ // end screen
     imageMode(CORNER);
     image(endGif, 0 ,0, w, h);
 
-    // draw a dark semi-transparent rectangle frame in the lower bottom
-    rectMode(CENTER);
+    // draw the title
+    textFont(title_font, title_font_size); // specify font
+    fill(255);
+    stroke(0);
+    textAlign(CENTER, TOP);
+    text(title_text, w/2, 16);
+
+    // create a gradient for the text
+    color c1 = #E85959;
+    color c2 = #F4A862;
+
+    // draw a dark semi-transparent rectangle frame in the bottom half of the screen
+    rectMode(CORNER);
     fill(0,0,0, 70);
     strokeWeight(0);
-    rect(500, 225, 945, 292);
-    title_text.draw();
+    stroke(c1);
+    
+    rect(32, 16 + title_font_size + 19, 945, 292);
 
-// ! for only the end screen, not used in the scoreboard
-    grade_text.setGrading(score_text.value);
-    grade_text.draw();
-    record_text1.setShift(shiftSecondLast);
-    record_text1.setShiftCount(shiftCount-1<0 ?  0: shiftCount-1);
-    record_text1.draw();
-    record_text2.setShift(shiftLast);
-    record_text2.setShiftCount(shiftCount);
-    record_text2.draw();
+    // endscreen state 0
 
-    total_score_text.setValue(score_text.value);
-    total_score_text.draw();
-    timeend_text.setValue(time_text.value);
-    timeend_text.draw();
+    if(endscreen_state == 0){
+      // ! for only the end screen, not used in the scoreboard
+      grade_text.setGrading(score_text.getValue());
+      grade_text.draw();
+      record_text1.draw();
+      record_text2.draw();
 
-    // TODO: draw the end screen scoreboard
+      total_score_text.setValue(score_text.getValue());
+      total_score_text.draw();
+      timeend_text.setValue(time_text.getValue());
+      timeend_text.draw();
+
+      // draw user input text
+      textFont(score_text.getFont(), 40); // specify font
+      fill(255);
+      stroke(0);
+      textAlign(CENTER, BOTTOM);
+    
+      int missing_length = tmp_name.length() - user_name.length();
+      if(missing_length > 0){ // missing text so replace with underscores
+        String tmp = user_name + tmp_name.substring(0, missing_length);
+         text(tmp, w/2, 16 + title_font_size + 19 + 292 - 32);
+      }else{
+         text(user_name, w/2, 16 + title_font_size + 19 + 292 - 32);
+      }
+
+
+    }else{
+      // draw the high score title
+      textFont(score_text.getFont(), 32); // specify font
+      fill(255);
+      stroke(0);
+      textAlign(CENTER, TOP);
+      text("HIGH SCORE", w/2, 16 + title_font_size + 32);
+
+      // draw the high score table
+      textFont(score_text.getFont(), 16); // specify font
+      fill(255);
+      stroke(0);
+      textAlign(CENTER, TOP);
+      text("ALL TIME", w/2, 16 + title_font_size + 36 + 32);
+
+      for(int i = 0; i < scores_object.size(); i++){
+        textFont(score_text.getFont(), 12); // specify font
+        fill(255);
+        stroke(0);
+
+        // draw the high score text
+
+        float text_width = textWidth("-0000 00:00 AAAA");
+        textAlign(RIGHT, TOP);
+        text(str(i+1) + " ", w/2 - text_width/2 - 8, 16 + title_font_size + 32 + 36 + (i+1)*24 + i*12);
+
+        textAlign(LEFT, TOP);
+        String high_score_text = scores_object.getJSONObject(i).getString("score") + " " + scores_object.getJSONObject(i).getString("time") + " " + scores_object.getJSONObject(i).getString("name");
+        text(high_score_text , w/2 - text_width/2, 16 + title_font_size + 32 + 36 + (i+1)*24 + i*12);
+
+        if (i == 3) // only draw the top 4 scores
+          break;
+      }
+
+    }
     
 
   }
@@ -474,12 +575,10 @@ void keyPressed(){
   
   if(key == 'a' || key == 'A'){
     clutch.press();
-    mechanisim.setClutch(true); // engage the clutch
+    mechanism.setClutch(true); // engage the clutch
   }
   if(key == 's' || key == 'S'){
     brake.press();
-    up_arrow.press();
-    down_arrow.press();
 
     rpm_sensor.decreaseValue(); // decrease the rpm value
     speed_sensor.decreaseValue(); // decrease the speed value
@@ -501,8 +600,8 @@ void keyPressed(){
       
       main_screen_sound.amp(background_volume);
       main_screen_sound.loop();
-      engine_idle_sound.amp(engine_volume);
-      engine_idle_sound.loop();
+      // engine_idle_sound.amp(engine_volume);
+      // engine_idle_sound.loop();
 
       game_state = 1; // start game
       backgroundGif.loop(); // play the gif
@@ -518,7 +617,7 @@ void keyPressed(){
   }
 
   if(key == 'f' || key == 'F'){
-    mechanisim.showForce(true);
+    mechanism.showForce(true);
   }
 
 }
@@ -527,7 +626,7 @@ void keyReleased(){
   
   if(key == 'a' || key == 'A'){
     clutch.release();
-    mechanisim.setClutch(false); // disengage the clutch
+    mechanism.setClutch(false); // disengage the clutch
   }
   if(key == 's' || key == 'S'){
     brake.release();
@@ -547,7 +646,7 @@ void keyReleased(){
       
       backgroundGif.stop(); // stop the gif
       main_screen_sound.stop();
-      engine_idle_sound.stop();
+      // engine_idle_sound.stop();
       start_screen_sound.amp(background_volume);
       start_screen_sound.loop();
       score_text.setValue(0);
@@ -563,7 +662,7 @@ void keyReleased(){
     if(game_state == 1){
       // stop the game audio  
       main_screen_sound.stop();
-      engine_idle_sound.stop();
+      // engine_idle_sound.stop();
 
 
       game_state = 2; // end game
@@ -572,22 +671,164 @@ void keyReleased(){
   }
 
   if(key == 'f' || key == 'F'){
-    mechanisim.showForce(false);
+    mechanism.showForce(false);
   }
+}
+
+// listen to typing during the end screen
+void keyTyped() {
+  if(game_state == 2)
+    if(endscreen_state == 0){
+      if (key == BACKSPACE) {
+        if (user_name.length() > 0)
+          user_name = user_name.substring(0, user_name.length()-1);
+      } else if (key == ENTER) {
+         if (user_name.length() > 0){
+          endscreen_state = 1; // save score
+
+          // write the current score to a file and read the file to display the scoreboard
+          JSONObject current_score = new JSONObject();
+
+          current_score.setString("time", time_text.value);
+          current_score.setString("name", user_name);
+          current_score.setString("score", score_text.value);
+          current_score.setInt("score_int", score_text.getValue());
+
+          scores_object.append(current_score);
+
+          // sort the scores using a hashmap that maps the score to the index in the array
+          HashMap<Float,Integer> map = new HashMap<Float,Integer>();
+          float[] scores = new float[scores_object.size()];
+
+          // populate the hashmap and array
+          for(int i = 0; i < scores_object.size(); i++){
+            JSONObject score = scores_object.getJSONObject(i);
+            scores[i] = scores_object.getJSONObject(i).getInt("score_int");
+            if(scores[i] < 0)
+              scores[i] -= random(0.5f);
+            else
+              scores[i] += random(0.5f);
+              
+             map.put(scores[i], i);
+          }
+
+          scores = reverse(sort(scores)); // sort the scores in non ascending order
+
+          // sort the scores in the json array
+          JSONArray tmp = new JSONArray();
+          for(int i = 0; i < scores.length; i++){
+            tmp.setJSONObject(i, scores_object.getJSONObject(map.get(  scores[i]   )));
+          }
+
+          // save and reload the file
+          saveJSONArray(tmp, "scores.json");
+          scores_object = loadJSONArray("scores.json");
+         }
+      } else{
+        if (user_name.length() < 4)
+          user_name += key;
+      }
+    }
 }
 
 // helper to shift gears
 boolean shiftGear(GEAR gear){
-  boolean isGoodShift = mechanisim.setGear(gear);
+  boolean canChangeGear = mechanism.setGear(gear);
+  return canChangeGear;
+}
 
-  if(isGoodShift){
+// helper to check if the user should shift up
+boolean shouldShiftUp(GEAR cur_gear){
+  GEAR target = GEAR.NEUTRAL;
+  String target_gear = gear_seq.get(gear_seq_index);
+  target = getGearFromString(target_gear);
+  return cur_gear.ordinal() - target.ordinal() > 0;
 
-    int min_rpm = mechanisim.getMinRPM();
-    int max_rpm = mechanisim.getMaxRPM();
-    rpm_sensor.setRange(min_rpm, max_rpm);
-  }
+}
 
-  return isGoodShift;
+boolean reachedTargetGear(GEAR cur_gear){
+  GEAR target = GEAR.NEUTRAL;
+  String target_gear = gear_seq.get(gear_seq_index);
+  target = getGearFromString(target_gear);
+  return cur_gear == target;
+}
+
+GEAR getGearFromString(String gear){
+  GEAR target = GEAR.NEUTRAL;
+
+  if(gear == "R")
+    target = GEAR.REVERSE;
+  else if(gear == "1")
+    target = GEAR.ONE;
+  else if(gear == "2")
+    target = GEAR.TWO;
+  else if(gear == "3")
+    target = GEAR.THREE;
+  else if(gear == "4")
+    target = GEAR.FOUR;
+  else if(gear == "5")
+    target = GEAR.FIVE;
+
+  return target;
+}
+
+
+void checkGear(GEAR cur_gear){
+    if(mechanism.getPrevGear() != cur_gear){ // check if the gear has changed    
+      boolean canChangeGear = shiftGear(cur_gear);
+      boolean targetGearReached = reachedTargetGear(cur_gear);
+
+      boolean isGoodShift = true; // assume good shift
+      int cur_rpm = rpm_sensor.getValue();
+      if(cur_rpm < mechanism.getMinRPM(cur_gear) || cur_rpm > mechanism.getMaxRPM(cur_gear)){
+        isGoodShift = false; // outside the rpm range to shift
+      }
+
+      if(canChangeGear && isGoodShift && targetGearReached){ // have reached target gear and made a great shift
+        // good shift
+        println("Good shift! Current gear: " + cur_gear);
+        score_text.increaseValue(10); // 10 points for a good shift
+        record_text1.addShiftCount(); // add to the shift count
+        record_text1.increaseValue(10); // add to the shift score
+
+        // change the target to the next gear
+        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
+        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+
+      }else if (!targetGearReached) { // did not reach target gear
+        println("Bad shift! Wrong gear: " + cur_gear);
+        score_text.decreaseValue(10); // 10 points penalty for a bad shift
+        record_text2.addShiftCount(); // add to the shift count
+        record_text2.increaseValue(10); // add to the shift score
+
+
+      }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
+        // good shift
+        println("Good shift! Current gear: " + cur_gear);
+        score_text.increaseValue(10); // 10 points for a good shift
+        record_text1.addShiftCount(); // add to the shift count
+        record_text1.increaseValue(10); // add to the shift score
+    
+      }else{ // reached target gear but made a bad shift
+
+        if(!canChangeGear){
+          println("Bad shift! Clutch not engaged");
+          score_text.decreaseValue(5); // 10 points penalty for a bad shift
+          record_text2.increaseValue(5); // add to the shift score
+        }
+        if(!isGoodShift){
+          println("Bad shift! Wrong RPM: " + cur_rpm);
+          score_text.decreaseValue(5); // 10 points penalty for a bad shift
+          record_text2.increaseValue(5); // add to the shift score
+        }
+
+        record_text2.addShiftCount(); // add to the shift count
+
+        // change the target to the next gear
+        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
+        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+      }
+    }
 }
 
 /* simulation section **************************************************************************************************/
@@ -599,22 +840,22 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-     if(haplyBoard.data_available()){
+    // if(haplyBoard.data_available()){
       /* GET END-EFFECTOR STATE (TASK SPACE) */
-      widgetOne.device_read_data();
+    //  widgetOne.device_read_data();
     
-      angles.set(widgetOne.get_device_angles()); 
-      pos_ee.set(widgetOne.get_device_position(angles.array()));
-      pos_ee.set(mechanisim.device_to_graphics(pos_ee));  
+    //   angles.set(widgetOne.get_device_angles()); 
+    //   pos_ee.set(widgetOne.get_device_position(angles.array()));
+    //   pos_ee.set(mechanism.device_to_graphics(pos_ee));  
 
 
-      if(game_state == 1)
-        mechanisim.forcerender(pos_ee);
+    //   if(game_state == 1)
+    //     mechanism.forcerender(pos_ee);
 
 
-     }    
-     torques.set(widgetOne.set_device_torques(mechanisim.fEE.array()));
-     widgetOne.device_write_torques();
+    //}    
+    //  torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
+    //  widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/
   
     rendering_force = false;
