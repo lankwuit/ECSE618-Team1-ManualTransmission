@@ -124,6 +124,10 @@ Meter up_arrow, down_arrow;
 Meter grade_text, record_text1 ,record_text2, total_score_text, timeend_text;
 // set up initial endscreen to show the end result (0), before scoreboard (1)
 int endscreen_state = 0;
+String user_name = "";
+String tmp_name = "____";
+
+JSONArray scores_object;
 // endscreen use ends
 
 
@@ -321,6 +325,12 @@ void setup(){
   gas.setFontSize(pedal_font_size);
 
 
+  // scores file setup (load file)
+  scores_object = loadJSONArray("scores.json");
+  if (scores_object == null) {
+    scores_object = new JSONArray();
+  }
+
   // setup title font
   title_font = createFont("../fonts/Disco Duck 3D Italic.otf", title_font_size, true);
 
@@ -503,8 +513,56 @@ void draw(){
       total_score_text.draw();
       timeend_text.setValue(time_text.getValue());
       timeend_text.draw();
+
+      // draw user input text
+      textFont(score_text.getFont(), 40); // specify font
+      fill(255);
+      stroke(0);
+      textAlign(CENTER, BOTTOM);
+    
+      int missing_length = tmp_name.length() - user_name.length();
+      if(missing_length > 0){ // missing text so replace with underscores
+        String tmp = user_name + tmp_name.substring(0, missing_length);
+         text(tmp, w/2, 16 + title_font_size + 19 + 292 - 32);
+      }else{
+         text(user_name, w/2, 16 + title_font_size + 19 + 292 - 32);
+      }
+
+
     }else{
-       // TODO: draw the end screen scoreboard
+      // draw the high score title
+      textFont(score_text.getFont(), 32); // specify font
+      fill(255);
+      stroke(0);
+      textAlign(CENTER, TOP);
+      text("HIGH SCORE", w/2, 16 + title_font_size + 32);
+
+      // draw the high score table
+      textFont(score_text.getFont(), 16); // specify font
+      fill(255);
+      stroke(0);
+      textAlign(CENTER, TOP);
+      text("ALL TIME", w/2, 16 + title_font_size + 36 + 32);
+
+      for(int i = 0; i < scores_object.size(); i++){
+        textFont(score_text.getFont(), 12); // specify font
+        fill(255);
+        stroke(0);
+
+        // draw the high score text
+
+        float text_width = textWidth("-0000 00:00 AAAA");
+        textAlign(RIGHT, TOP);
+        text(str(i+1) + " ", w/2 - text_width/2 - 8, 16 + title_font_size + 32 + 36 + (i+1)*24 + i*12);
+
+        textAlign(LEFT, TOP);
+        String high_score_text = scores_object.getJSONObject(i).getString("score") + " " + scores_object.getJSONObject(i).getString("time") + " " + scores_object.getJSONObject(i).getString("name");
+        text(high_score_text , w/2 - text_width/2, 16 + title_font_size + 32 + 36 + (i+1)*24 + i*12);
+
+        if (i == 3) // only draw the top 4 scores
+          break;
+      }
+
     }
     
 
@@ -614,6 +672,62 @@ void keyReleased(){
   if(key == 'f' || key == 'F'){
     mechanism.showForce(false);
   }
+}
+
+// listen to typing during the end screen
+void keyTyped() {
+  if(game_state == 2)
+    if(endscreen_state == 0){
+      if (key == BACKSPACE) {
+        if (user_name.length() > 0)
+          user_name = user_name.substring(0, user_name.length()-1);
+      } else if (key == ENTER) {
+         if (user_name.length() > 0){
+          endscreen_state = 1; // save score
+
+          // write the current score to a file and read the file to display the scoreboard
+          JSONObject current_score = new JSONObject();
+
+          current_score.setString("time", time_text.value);
+          current_score.setString("name", user_name);
+          current_score.setString("score", score_text.value);
+          current_score.setInt("score_int", score_text.getValue());
+
+          scores_object.append(current_score);
+
+          // sort the scores using a hashmap that maps the score to the index in the array
+          HashMap<Float,Integer> map = new HashMap<Float,Integer>();
+          float[] scores = new float[scores_object.size()];
+
+          // populate the hashmap and array
+          for(int i = 0; i < scores_object.size(); i++){
+            JSONObject score = scores_object.getJSONObject(i);
+            scores[i] = scores_object.getJSONObject(i).getInt("score_int");
+            if(scores[i] < 0)
+              scores[i] -= random(0.5f);
+            else
+              scores[i] += random(0.5f);
+              
+             map.put(scores[i], i);
+          }
+
+          scores = reverse(sort(scores)); // sort the scores in non ascending order
+
+          // sort the scores in the json array
+          JSONArray tmp = new JSONArray();
+          for(int i = 0; i < scores.length; i++){
+            tmp.setJSONObject(i, scores_object.getJSONObject(map.get(  scores[i]   )));
+          }
+
+          // save and reload the file
+          saveJSONArray(tmp, "scores.json");
+          scores_object = loadJSONArray("scores.json");
+         }
+      } else{
+        if (user_name.length() < 4)
+          user_name += key;
+      }
+    }
 }
 
 // helper to shift gears
