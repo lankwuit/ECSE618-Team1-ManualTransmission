@@ -150,12 +150,6 @@ public class Meter {
       return;
     }
 
-    if(this.type == METER_TYPE.RECORD){
-      value_int++;
-      this.setValue(value_int);
-      return;
-    }
-
     int cur_val = int(this.value);
     cur_val += val;
     if (cur_val > this.max_value) // clamp the value to the max value
@@ -353,13 +347,10 @@ public class Meter {
 
     // draw the score
     textAlign(RIGHT, CENTER);
-    if(this.shift){
-      //good shift
-      text( "+" + this.value, 945, this.y);
-    }else{
-      //bad shift
-      text("-" + this.value, 945, this.y);
-    }
+    if(this.shift)
+      text("+"+ this.value, 945, this.y);
+    else
+      text("-"+ this.value, 945, this.y);
   }  
   private void drawTime(){
     textFont(this.font, this.font_size); // specify font 
@@ -442,16 +433,16 @@ public class Meter {
   void adjustColour(float min, float max) {
     float val = float(this.value);
 
-    if (val < min) {
+    if (val <= min) {
       this.font_color = this.font_color_bad;
-    } else if (val < 1.1*min) {
+    } else if (val < 1.3*min) {
       this.font_color = this.font_color_ok;
-    } else if (val > 0.9*max) {
+    } else if (val > 0.8*max) {
       this.font_color = this.font_color_ok;
     } else if (val > max) {
       this.font_color = this.font_color_bad;
     } else {
-      this.font_color = this.font_color_ok;
+      this.font_color = this.font_color_good;
     }
   }
 

@@ -278,21 +278,22 @@ public class GearShifter{
         // draw the force vector on the end effector
         if(showForce){
             pushMatrix();
-            strokeWeight(2);
-            stroke(255);
+            strokeWeight(8);
+            color c = #E85959;
+            stroke(c); // red arrow for force vector
 
             float l = fWall.mag(); // length of the force vector
 
-            translate(xE,yE); // translate to the centre of the end effector
+            translate(x,y); // translate to the centre of the end effector
             rotate(atan2(fWall.x, fWall.y)); // rotate the force vector to the direction of the force vector
             line(0, 0, l, 0); // draw a line from the centre of the end effector to the end of the force vector
             
             translate(l, 0); // translate to the end of the force vector
             float a = radians(150);
-            float x1 = 8 * cos(a);
+            float x1 = 8 * cos(a); // x is negtiave
             float y1 = 8 * sin(a);
-            line(0, 0, -x1, y1); // draw the top part of the arrow
-            line(0, 0, -x1, -y1); // draw the bottom part of the arrow
+            line(0, 0, x1, y1); // draw the top part of the arrow
+            line(0, 0, x1, -y1); // draw the bottom part of the arrow
             popMatrix();
         }
     }
@@ -668,17 +669,17 @@ public class GearShifter{
 
         switch(cur_gear){
             case ONE:
-                return rpm_max*0.2;
+                return rpm_max;
             case TWO:
-                return rpm_max*0.4;
+                return rpm_max;
             case THREE:
-                return rpm_max*0.6;
+                return rpm_max;
             case FOUR:
-                return rpm_max*0.8;
+                return rpm_max;
             case FIVE:
                 return rpm_max;
             case REVERSE:
-                return rpm_max*0.1;
+                return rpm_max*0.2;
             default:
                 return rpm_max;
         }
@@ -686,7 +687,7 @@ public class GearShifter{
 
     public PVector getPosReltoCustomSpace(PVector posEE){
         PVector posReltoCustomSpace = new PVector(0, 0);
-        posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
+        posReltoCustomSpace.set( (posEE.x+this.w / 2 / this.scale)*this.scale, (posEE.y - this.yinitial)*this.scale);
         return posReltoCustomSpace;
     }
 
