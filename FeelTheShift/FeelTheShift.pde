@@ -110,6 +110,10 @@ StringList gear_seq = new StringList(new String[] {
   });
 int gear_seq_index = 0;
 
+//for scoring
+int shiftCount = 0;
+boolean shiftLast =false;
+boolean shiftSecondLast=false;
 
 
 
@@ -122,6 +126,12 @@ float engine_volume = 0.1; // background engine volume
 Meter target_text, score_text, time_text, rpm_sensor, speed_sensor;
 Meter end_button, reset_button;
 Meter up_arrow, down_arrow;
+
+// for endscreen uses
+Meter title_text, grade_text, record_text1 ,record_text2, total_score_text, timeend_text;
+int endscreen;
+// endscreen use ends
+
 
 int current_time = 0;
 int last_time = 0;
@@ -225,7 +235,36 @@ void setup(){
 
   target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
 
+  // end game condition texts
+    // title
+  title_text = new Meter(226, 16, 1000-226*2, 30, METER_TYPE.TITLE);
+  title_text.setName("FEEL THE SHIFT");
+  title_text.setTitleSize(64);
+    // screen 1 with grade conclusion, records, and name
+  grade_text = new Meter(32+32, 16+64+19+32+5, 1000-226*2, 30, METER_TYPE.GRADE);
+  grade_text.setName("GRADE");
+  grade_text.setFontSize(32);
+
+  record_text1 = new Meter(grade_text.x+textWidth(grade_text.name)*4+32, 16+64+19+32, 2, 30, METER_TYPE.RECORD);
+  record_text1.setName("RECORD1");
+  record_text1.setFontSize(32);
+
+  record_text2 = new Meter(record_text1.x, record_text1.y+textWidth(record_text1.name), 2, 30, METER_TYPE.RECORD);
+  record_text2.setName("RECORD2");
+  record_text2.setFontSize(32);
+
+  total_score_text= new Meter(record_text2.x, record_text2.y+textWidth(record_text2.name), 2, 30, METER_TYPE.RECORD);
+  total_score_text.setName("TOTAL");
+  total_score_text.setFontSize(32);
   
+  timeend_text= new Meter(w-32-32- 32 - 32*4, total_score_text.y, 2, 30, METER_TYPE.TIME);
+  timeend_text.setName("TIME");
+  timeend_text.setFontSize(16);
+
+  
+
+
+
   // start & reset buttons
   end_button = new Meter(button_x + button_sep/2, button_y, button_w*0.75, button_h, METER_TYPE.BUTTON);
   reset_button = new Meter(button_x - button_sep/2, button_y, button_w, button_h, METER_TYPE.BUTTON);
@@ -294,6 +333,8 @@ void setup(){
 
   // setup title font
   title_font = createFont("../fonts/Disco Duck 3D Italic.otf", title_font_size, true);
+  // set up initial endscreen to show the end result, before scoreboard
+  endscreen = 0;
 
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
   mechanism = new GearShifter(w, h, pixelsPerMeter);
@@ -348,6 +389,28 @@ void draw(){
     GEAR target_gear = getGearFromString(target_gear_str);
     rpm_sensor.adjustColour(mechanism.getMinRPM(target_gear), mechanism.getMaxRPM(target_gear));
     checkGear(cur_gear);
+    // int indx = frameCount % 6;
+    // GEAR cur_gear = mechanisim.getGear(pos_ee);
+    // if(mechanisim.getPrevGear() != cur_gear){ // check if the gear has changed, add 500ms delay to avoid multiple gear changes
+    //   boolean isGoodShift = shiftGear(cur_gear);
+
+    //   if(isGoodShift){
+    //     // good shift
+    //     println("Good shift! Current gear: " + cur_gear);
+    //     score_text.increaseValue(10); // 10 points for a good shift
+    //     target_text.setValue("GEAR " + target_gears[indx]);
+    //     shiftSecondLast = shiftLast;
+    //     shiftLast = true;
+    //     shiftCount=shiftCount+1;
+    //   }else{
+    //     // bad shift
+    //     println("Bad shift!");
+    //     score_text.decreaseValue(10); // 10 points penalty for a bad shift
+    //     shiftSecondLast = shiftLast;
+    //     shiftLast = false;
+    //     shiftCount=shiftCount+1;
+    //   }
+    // }
 
     // decrase rpm value every 2 frames
     if(frameCount % 2 == 0){
@@ -441,7 +504,31 @@ void draw(){
     imageMode(CORNER);
     image(endGif, 0 ,0, w, h);
 
+    // draw a dark semi-transparent rectangle frame in the lower bottom
+    rectMode(CENTER);
+    fill(0,0,0, 70);
+    strokeWeight(0);
+    rect(500, 225, 945, 292);
+    title_text.draw();
+
+// ! for only the end screen, not used in the scoreboard
+    grade_text.setGrading(score_text.value);
+    grade_text.draw();
+    record_text1.setShift(shiftSecondLast);
+    record_text1.setShiftCount(shiftCount-1<0 ?  0: shiftCount-1);
+    record_text1.draw();
+    record_text2.setShift(shiftLast);
+    record_text2.setShiftCount(shiftCount);
+    record_text2.draw();
+
+    total_score_text.setValue(score_text.value);
+    total_score_text.draw();
+    timeend_text.setValue(time_text.value);
+    timeend_text.draw();
+
     // TODO: draw the end screen scoreboard
+    
+
   }
 }
 /* end draw section ****************************************************************************************************/
@@ -649,9 +736,9 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-    //  if(haplyBoard.data_available()){
-    //   /* GET END-EFFECTOR STATE (TASK SPACE) */
-    //   widgetOne.device_read_data();
+     if(haplyBoard.data_available()){
+      /* GET END-EFFECTOR STATE (TASK SPACE) */
+      widgetOne.device_read_data();
     
     //   angles.set(widgetOne.get_device_angles()); 
     //   pos_ee.set(widgetOne.get_device_position(angles.array()));

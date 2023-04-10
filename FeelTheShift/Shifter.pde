@@ -24,22 +24,22 @@ public class GearShifter{
     
     // ****************************** //
     // Bereket's parameters
-    float kpwall = 800*10; // Bereket: I need to multiply by 10 to make it work
-    float kiwall = 200*10;
-    float kismooth= 700*10;
-    float kdwall = 650*10;
-    float curvefactor = 0.05*2;
-    float neutralRecoveryForce = 2.5*75; // Bereket : I need to multiply by 75 to make it work
+    // float kpwall = 800*10; // Bereket: I need to multiply by 10 to make it work
+    // float kiwall = 200*10;
+    // float kismooth= 700*10;
+    // float kdwall = 650*10;
+    // float curvefactor = 0.05*2;
+    // float neutralRecoveryForce = 2.5*75; // Bereket : I need to multiply by 75 to make it work
     // ****************************** //
 
     // ****************************** //
     // uncomment this to use the old parameters
-    //  float kpwall = 800;
-    //  float kiwall = 200;
-    //  float kismooth= 700;
-    //  float kdwall = 650;
-    //  float curvefactor = 0.1;
-    //  float neutralRecoveryForce = 2.5;
+     float kpwall = 800*5;
+     float kiwall = 200*5;
+     float kismooth= 700;
+     float kdwall = 800*5;
+     float curvefactor = 0.1;
+     float neutralRecoveryForce = 2.5;
     // ****************************** //
     
     float initial_offset = 0.0;
@@ -382,7 +382,7 @@ public class GearShifter{
             fWall = fWall.add(velWall.mult(kdwall));  
             fWall = fWall.add(cumpenWall.mult(-kiwall));
         }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< topCoords[7]*h/scale){
-            penWall.set(
+            penWall.add(
                 abs(topCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
                     abs(topCoords[4]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[4]*w/scale>posReltoCustomSpace.x ? (topCoords[4]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[4]*w/scale-posReltoCustomSpace.x+rEE)):(
                         abs(topCoords[10]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[10]*w/scale>posReltoCustomSpace.x ? (topCoords[10]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[10]*w/scale-posReltoCustomSpace.x+rEE)):(
@@ -399,16 +399,16 @@ public class GearShifter{
             cumerrorwx=0.0;
             cumerrorwy=0.0;
         }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[7]*h/scale){
-            penWall.set(
-                abs(topCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
-                                    abs(topCoords[28]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[28]*w/scale>posReltoCustomSpace.x ? (topCoords[28]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[28]*w/scale-posReltoCustomSpace.x+rEE)):0
+            penWall.add(
+                 posReltoCustomSpace.x- topCoords[0]*w/scale<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
+                                    topCoords[28]*w/scale- posReltoCustomSpace.x<rEE ? (topCoords[28]*w/scale>posReltoCustomSpace.x ? (topCoords[28]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[28]*w/scale-posReltoCustomSpace.x+rEE)):0
                                 )
             ,0);
             cumpenWall.set(0,0);
             cumerrorwx=0.0;
             cumerrorwy=0.0;
         }else if(bottomCoords[7]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[1]*h/scale){
-            penWall.set(
+            penWall.add(
                 abs(bottomCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[0]*w/scale>posReltoCustomSpace.x ? (bottomCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
                     abs(bottomCoords[4]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[4]*w/scale>posReltoCustomSpace.x ? (bottomCoords[4]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[4]*w/scale-posReltoCustomSpace.x+rEE)):(
                         abs(bottomCoords[10]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[10]*w/scale>posReltoCustomSpace.x ? (bottomCoords[10]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[10]*w/scale-posReltoCustomSpace.x+rEE)):(
@@ -432,13 +432,13 @@ public class GearShifter{
         //for DEF, JKL etc, including clutch interactions
 
         if(topCoords[6]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[10]*w/scale){
-            penWall.set(0,
+            penWall.add(0,
                 abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale>posReltoCustomSpace.y ? (topCoords[7]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[7]*h/scale-posReltoCustomSpace.y+rEE)):(
                     abs(bottomCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[7]*h/scale>posReltoCustomSpace.y ? (bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE)):0
                 )
             );
         }else if(topCoords[18]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[22]*w/scale){
-            penWall.set(0,
+            penWall.add(0,
                 abs(topCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[19]*h/scale>posReltoCustomSpace.y ? (topCoords[19]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[19]*h/scale-posReltoCustomSpace.y+rEE)):(
                     abs(bottomCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[19]*h/scale>posReltoCustomSpace.y ? (bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE)):0
                 )
