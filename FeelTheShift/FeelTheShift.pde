@@ -187,21 +187,21 @@ void setup(){
 
 
    /*************************************************************************/
-  //  haplyBoard          = new Board(this, "COM9", 0);
-  //  widgetOne           = new Device(widgetOneID, haplyBoard);
-  //  pantograph          = new Pantograph();
+   haplyBoard          = new Board(this,  "/dev/cu.usbmodem142401", 0);
+   widgetOne           = new Device(widgetOneID, haplyBoard);
+   pantograph          = new Pantograph();
   
-  //  widgetOne.set_mechanism(pantograph);
+   widgetOne.set_mechanism(pantograph);
   
-  //  ////start: added to fix inverse motion of the ball
-  //  widgetOne.add_actuator(1, CCW, 2);
-  //  widgetOne.add_actuator(2, CW, 1);
+   ////start: added to fix inverse motion of the ball
+   widgetOne.add_actuator(1, CCW, 2);
+   widgetOne.add_actuator(2, CW, 1);
 
-  //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-  //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
+   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+   widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-  //  widgetOne.device_set_parameters();
+   widgetOne.device_set_parameters();
    /*************************************************************************/
 
   // engine sound
@@ -453,8 +453,9 @@ void draw(){
     }
     popMatrix();
 
+    // check if the knob is in the centre
     PVector pos = mechanism.getPosReltoCustomSpace(pos_ee);
-    boolean is_in_centre = pos.sub(new PVector(w/2, w/2)).mag() < 0.1;
+    boolean is_in_centre = pos.sub(new PVector(w/2, h/2)).mag() < 10.0;
 
     // draw insert knob text
     String insert_knob_text = "INSERT KNOB";
@@ -630,8 +631,6 @@ void keyReleased(){
   }
   if(key == 's' || key == 'S'){
     brake.release();
-    up_arrow.release();
-    down_arrow.release();
   }
   if(key == 'd' || key == 'D'){
     gas.release();
@@ -742,7 +741,7 @@ boolean shouldShiftUp(GEAR cur_gear){
   GEAR target = GEAR.NEUTRAL;
   String target_gear = gear_seq.get(gear_seq_index);
   target = getGearFromString(target_gear);
-  return cur_gear.ordinal() - target.ordinal() > 0;
+  return cur_gear.ordinal() - target.ordinal() < 0; // should increase gear
 
 }
 
@@ -795,13 +794,6 @@ void checkGear(GEAR cur_gear){
         gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
         target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
 
-      }else if (!targetGearReached) { // did not reach target gear
-        println("Bad shift! Wrong gear: " + cur_gear);
-        score_text.decreaseValue(10); // 10 points penalty for a bad shift
-        record_text2.addShiftCount(); // add to the shift count
-        record_text2.increaseValue(10); // add to the shift score
-
-
       }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
         // good shift
         println("Good shift! Current gear: " + cur_gear);
@@ -809,7 +801,7 @@ void checkGear(GEAR cur_gear){
         record_text1.addShiftCount(); // add to the shift count
         record_text1.increaseValue(10); // add to the shift score
     
-      }else{ // reached target gear but made a bad shift
+      }else if(targetGearReached){ // reached target gear but made a bad shift
 
         if(!canChangeGear){
           println("Bad shift! Clutch not engaged");
@@ -827,6 +819,11 @@ void checkGear(GEAR cur_gear){
         // change the target to the next gear
         gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
         target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+      }else { // did not reach target gear
+        println("Bad shift! Wrong gear: " + cur_gear);
+        score_text.decreaseValue(10); // 10 points penalty for a bad shift
+        record_text2.addShiftCount(); // add to the shift count
+        record_text2.increaseValue(10); // add to the shift score
       }
     }
 }
@@ -840,22 +837,21 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-    // if(haplyBoard.data_available()){
-      /* GET END-EFFECTOR STATE (TASK SPACE) */
-    //  widgetOne.device_read_data();
+    if(haplyBoard.data_available()){
+     widgetOne.device_read_data();
     
-    //   angles.set(widgetOne.get_device_angles()); 
-    //   pos_ee.set(widgetOne.get_device_position(angles.array()));
-    //   pos_ee.set(mechanism.device_to_graphics(pos_ee));  
+      angles.set(widgetOne.get_device_angles()); 
+      pos_ee.set(widgetOne.get_device_position(angles.array()));
+      pos_ee.set(mechanism.device_to_graphics(pos_ee));  
 
 
-    //   if(game_state == 1)
-    //     mechanism.forcerender(pos_ee);
+      if(game_state == 1)
+        mechanism.forcerender(pos_ee);
 
 
-    //}    
-    //  torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
-    //  widgetOne.device_write_torques();
+    }    
+     torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
+     widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/
   
     rendering_force = false;
