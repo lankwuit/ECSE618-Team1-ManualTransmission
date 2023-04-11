@@ -1,6 +1,6 @@
 import processing.sound.*;
 
-enum METER_TYPE{RPM, SPEED, PEDAL, BUTTON, TEXT, ICON, TITLE, GRADE, RECORD, TIME, OTHER}; // types of meters
+enum METER_TYPE{RPM, SPEED, PEDAL, BUTTON, TEXT, ICON, GRADE, RECORD, TIME, CLOCK, OTHER}; // types of meters
 
 // class the creates and displays sensor data
 public class Meter {
@@ -11,6 +11,7 @@ public class Meter {
 
 
   String value; // the printed value
+  int value_int;
   int font_size;
   int title_size;
   String name; // either "RPM" or "KM/HR"
@@ -18,7 +19,12 @@ public class Meter {
   PShape sensor;  // The PShape object
   PShape border; // The PShape object
   PFont font; // the font used to display the text
-  PFont titlefont; //for the title in end screen
+  color font_color = color(255); // the color of the text
+
+  color font_color_bad = #E85959;
+  color font_color_good = #30D65F;
+  color font_color_ok = #F4A862;
+
 
 
   boolean show_icon = false; // if true, show an icon instead of text
@@ -30,8 +36,11 @@ public class Meter {
   char Grading = 'Z';
   
   // min and max values for value
-  int min_value = 0;
-  int max_value = 100;
+  int min_value = Integer.MIN_VALUE;
+  int max_value = Integer.MAX_VALUE;
+
+  boolean shift; // to determine if the previous is a good shift or a bad shift
+  int shiftCount; // count for shift
 
   // the type of instrument
   METER_TYPE type;
@@ -47,8 +56,6 @@ public class Meter {
     this.type = type;
     this.font_size = 30;
     this.font = createFont("../fonts/PressStart.ttf", this.font_size, true);
-    this.title_size = 64;
-    this.titlefont = createFont("../fonts/Disco Duck 3D Italic.otf", this.title_size, true);
 
 
     switch (this.type) {
@@ -57,7 +64,7 @@ public class Meter {
         this.setValue(0);
         break;
       case SPEED:
-        this.name = "KMPH";
+        this.name = "KM/H";
         this.setValue(0);
         break;
 
@@ -68,6 +75,7 @@ public class Meter {
 
       case BUTTON:
       case TEXT:
+      case CLOCK:
         this.setValue(0);
         break;
 
@@ -93,10 +101,17 @@ public class Meter {
         this.value = nf(value, 3, 0);
         break;
       case TEXT:
+      case RECORD:
+      case TIME:
         this.value = nf(value, 4, 0);
         break;
-      case TIME:
+
+      case CLOCK:
+        int minutes = value / 60;
+        int seconds = value % 60;
+        this.value = nf(minutes, 2, 0) + ":" + nf(seconds, 2, 0);
         break;
+
     }
   }
 
@@ -104,13 +119,16 @@ public class Meter {
     this.value = value;
   }
 
+  public int getValue() {
+    if(this.type == METER_TYPE.CLOCK)
+      return value_int;
+    return int(this.value);
+  }
+
   public void setFontSize(int size){
     this.font_size = size;
   }
 
-  public void setTitleSize (int size){
-    this.title_size = size;
-  }
   public void setGradeFont (int size){
     this.title_size = size;
   }
@@ -126,6 +144,12 @@ public class Meter {
 
 
   public void increaseValue(int val){
+    if(this.type == METER_TYPE.CLOCK){
+      value_int++;
+      this.setValue(value_int);
+      return;
+    }
+
     int cur_val = int(this.value);
     cur_val += val;
     if (cur_val > this.max_value) // clamp the value to the max value
@@ -172,7 +196,7 @@ public class Meter {
   }
 
   public void decreaseValue() {
-    // apply damping to the v```````````alue
+    // apply damping to the value
     float val = float(this.value);
 
     switch (this.type) {
@@ -199,8 +223,8 @@ public class Meter {
     this.icon = img;
   }
 
-  public void setGrading(String score){
-    int scores = Integer.parseInt(score);
+  public void setGrading(int score){
+    int scores = score;
     if (scores > 400){
       this.Grading = 'A';
     } else if (scores > 300){
@@ -224,6 +248,7 @@ public class Meter {
         this.drawValue(); // draw the text
         break;
 
+      case CLOCK:
       case TEXT:
         this.drawGameText(); // draw the text
         break;
@@ -244,10 +269,6 @@ public class Meter {
       case OTHER:
         break;
 
-      case TITLE:
-        this.drawTitleText();
-        break;
-
       case GRADE:
         this.drawGrade();
         break;
@@ -264,7 +285,7 @@ public class Meter {
   private void drawButton(){
     rectMode(CENTER);
     fill(0);
-
+    strokeWeight(4);
     if(this.pressed)
       stroke(0);
      else
@@ -272,24 +293,18 @@ public class Meter {
     rect(this.x + this.w/2, this.y + this.h/2, this.w, this.h, this.radius);
 
     // draw value below
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
     textFont(this.font, this.font_size*0.5); // specify font
     text(this.value, this.x + this.w/2, this.y + this.h + this.font_size * 0.5);
   }
 
   private void drawText(){
     textFont(this.font, this.font_size); // specify font
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
     textAlign(CENTER, CENTER);
     text(this.name, this.x + this.w/2, this.y + this.h/2);
   }
   
-  private void drawTitleText(){
-    textFont(this.titlefont, this.title_size); // specify font
-    fill(255); // set fill colour for text
-    textAlign(LEFT, CENTER);
-    text(this.name, this.x, this.y);
-  }
   private void drawGrade(){
     textFont(this.font, this.font_size); // specify font
     fill(255); // set fill colour for text
@@ -302,14 +317,13 @@ public class Meter {
     text(this.Grading, this.x + 0.5*name_size, this.y + this.font_size*1.8);
   }
 
-  boolean shift; // to determine if the previous is a good shift or a bad shift
-  int shiftCount;
   private void setShift(boolean stat){
     this.shift = stat;
   }
 
-  private void setShiftCount(int count){
-    this.shiftCount = count;
+
+  public void addShiftCount(){
+    this.shiftCount++;
   }
   private void drawRecord(){
     textFont(this.font, this.font_size); // specify font 
@@ -321,39 +335,47 @@ public class Meter {
       return;
     }
     
+    // draw the shift count
     textAlign(LEFT, CENTER);
     String temp = nf(this.shiftCount,3);
     text(temp, this.x, this.y);
+
+    // draw the name
     float count_size = textWidth(temp);
     textAlign(LEFT, CENTER);
-    if(this.shift){
-      //good shift
-      text("GOOD SHIFT", this.x + count_size+40, this.y);
-      textAlign(RIGHT, CENTER);
-      text("+ 10", 945, this.y);
-    }else{
-      //bad shift
-      text(" BAD SHIFT", this.x + count_size+40, this.y);
-      textAlign(RIGHT, CENTER);
-      text("- 10", 945, this.y);
-    }
+    text(this.name, this.x + count_size+40, this.y);
+
+    // draw the score
+    textAlign(RIGHT, CENTER);
+    if(this.shift)
+      text("+"+ this.value, 945, this.y);
+    else
+      text("-"+ this.value, 945, this.y);
   }  
   private void drawTime(){
     textFont(this.font, this.font_size); // specify font 
     fill(255); // set fill colour for text   
+    
+
+    int time = Integer.parseInt(this.value);
+    String minute_text = str(time/60) +" MINUTE(S)";
+    String second_text = str(time%60) +" SECOND(S)";
+
     textAlign(RIGHT, CENTER);
-    text(str(Integer.parseInt(this.value)/60) +" MINUTES", this.x, this.y);    
+    text(minute_text, this.x, this.y);    
+
     textAlign(RIGHT, CENTER);
-    text(str(Integer.parseInt(this.value)%60) +" SECONDS", this.x, this.y+20);
-    float time_size = textWidth(str(Integer.parseInt(this.value)/60));
+    text(second_text, this.x, this.y+20);
+
+
+    float time_size = textWidth(minute_text);
     textAlign(RIGHT, CENTER);
-    text("TIME:", this.x-150-4, this.y);
+    text(this.name + ":", this.x-time_size - 4, this.y);
   }
 
 
-
   private void drawGameText() {
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
     textFont(this.font, this.font_size); // specify font
     float name_size = textWidth(this.name);
     String top_text = "TARGET";
@@ -373,7 +395,7 @@ public class Meter {
 
   private void drawValue() {
     textFont(this.font, this.font_size); // specify font
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
 
     textAlign(RIGHT, CENTER);
     float value_size = textWidth("0000");
@@ -399,7 +421,7 @@ public class Meter {
     this.drawIcon();
 
     // draw the text below the pedal
-    fill(255); // set fill colour for text
+    fill(this.font_color); // set fill colour for text
     textAlign(CENTER, CENTER);
     textFont(this.font, this.font_size); // specify font
     text(this.name, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 1);
@@ -407,6 +429,26 @@ public class Meter {
     text(this.value, this.x + this.icon.width/2, this.y + this.icon.height + this.font_size * 2.5);
   }
 
+  // adjust the colour of the text based on the min and max values
+  void adjustColour(float min, float max) {
+    float val = float(this.value);
+
+    if (val <= min) {
+      this.font_color = this.font_color_bad;
+    } else if (val < 1.3*min) {
+      this.font_color = this.font_color_ok;
+    } else if (val > 0.8*max) {
+      this.font_color = this.font_color_ok;
+    } else if (val > max) {
+      this.font_color = this.font_color_bad;
+    } else {
+      this.font_color = this.font_color_good;
+    }
+  }
+
+  public PFont getFont() {
+    return this.font;
+  }
   
   public void press(){
     // only play the sound if it is not already playing

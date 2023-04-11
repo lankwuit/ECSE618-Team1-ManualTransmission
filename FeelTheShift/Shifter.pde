@@ -1,12 +1,5 @@
-import java.util.Map;
-
 
 enum GEAR{REVERSE, NEUTRAL, ONE, TWO, THREE, FOUR, FIVE}; // types of meters
-
-HashMap<String,Integer> min_rpms = new HashMap<String,Integer>();
-HashMap<String,Integer> max_rpms = new HashMap<String,Integer>();
-
-
 
 
 // class the creates and displays the gear shifting mechanisim
@@ -100,6 +93,10 @@ public class GearShifter{
     // font
     int font_size = 32;
     PFont font = createFont("../fonts/PressStart.ttf", this.font_size, true);
+
+    // global min/max rpm
+    int rpm_min = 0;
+    int rpm_max = 0;
 
     // the coordinates of curve to draw; must have 2n enteries so that (x/w,y/h) = topCoords[i], topCoords[i+1]
     // top left to top right
@@ -281,21 +278,22 @@ public class GearShifter{
         // draw the force vector on the end effector
         if(showForce){
             pushMatrix();
-            strokeWeight(2);
-            stroke(255);
+            strokeWeight(8);
+            color c = #E85959;
+            stroke(c); // red arrow for force vector
 
             float l = fWall.mag(); // length of the force vector
 
-            translate(xE,yE); // translate to the centre of the end effector
+            translate(x,y); // translate to the centre of the end effector
             rotate(atan2(fWall.x, fWall.y)); // rotate the force vector to the direction of the force vector
             line(0, 0, l, 0); // draw a line from the centre of the end effector to the end of the force vector
             
             translate(l, 0); // translate to the end of the force vector
             float a = radians(150);
-            float x1 = 8 * cos(a);
+            float x1 = 8 * cos(a); // x is negtiave
             float y1 = 8 * sin(a);
-            line(0, 0, -x1, y1); // draw the top part of the arrow
-            line(0, 0, -x1, -y1); // draw the bottom part of the arrow
+            line(0, 0, x1, y1); // draw the top part of the arrow
+            line(0, 0, x1, -y1); // draw the bottom part of the arrow
             popMatrix();
         }
     }
@@ -311,8 +309,8 @@ public class GearShifter{
         // initial x position is refferred to the coordinate of H
         this.endEffector = createShape(ELLIPSE, topCoords[14]*w, ballCreationYPosition, 2*rEE*scale, 2*rEE*scale);
         this.endEffector.setStroke(color(0));
-        this.endEffector.setStrokeWeight(5);
-        this.endEffector.setFill(color(0,0,0));
+        this.endEffector.setStrokeWeight(0);
+        this.endEffector.setFill(color(#F4A862));
     }   
     
     float[] curvecenter = {
@@ -356,12 +354,6 @@ public class GearShifter{
         /*change coordinate of the posEE to the actual coordinate that we are using */
         PVector posReltoCustomSpace = new PVector(0, 0);
         posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
-
-        //check if the initial position tuning has passed
-        //if (!initialFlag){
-        //    initialHandler(posReltoCustomSpace);
-        //    return;
-        //}
 
         // * topcord 是按照 % width 来做的，width 为常量关于pixel的 posEE是按照米的 ，rEE 是按照M的
         float temp = 0.0, temp2=0.0;
@@ -619,18 +611,15 @@ public class GearShifter{
 
 
     public boolean setGear(GEAR g){
-        this.prev_gear = g;
+        this.prev_gear = g; // change the last gear
+
         if(this.clutch == false){ // clutch is not engaged
-            // TODO: ADD GRIND GEAR FORCE
             // Grind Gear force added in the shifter section. Right now it is more of a wall effect
             // TODO: ADD SOUND EFFECT
             // TODO: ADD VISUAL EFFECT
-
-
             return false; // cannot change gear
 
-        }
-
+        } 
         // TODO: ADD VISUAL EFFECT
         return true; // gear changed
     }
@@ -644,12 +633,62 @@ public class GearShifter{
     }
 
 
-    public int getMinRPM(){
-        return 1000;
+    public void setMinMaxRpm(int min, int max){
+        this.rpm_min = min;
+        this.rpm_max = max;
     }
 
-    public int getMaxRPM(){
-        return 7000;
+
+    /*
+    The minimum RPM to switch into a given gear
+    */
+    public float getMinRPM(GEAR cur_gear){
+        switch(cur_gear){
+            case ONE:
+                return rpm_min*1.2;
+            case TWO:
+                return rpm_min*1.4;
+            case THREE:
+                return rpm_min*1.6;
+            case FOUR:
+                return rpm_min*1.8;
+            case FIVE:
+                return rpm_min*2;
+            case REVERSE:
+                return rpm_min;
+            default:
+                return rpm_min;
+        }
+    }
+
+
+    /*
+    The maximum RPM to switch into a given gear
+    */
+    public float getMaxRPM(GEAR cur_gear){
+
+        switch(cur_gear){
+            case ONE:
+                return rpm_max;
+            case TWO:
+                return rpm_max;
+            case THREE:
+                return rpm_max;
+            case FOUR:
+                return rpm_max;
+            case FIVE:
+                return rpm_max;
+            case REVERSE:
+                return rpm_max*0.2;
+            default:
+                return rpm_max;
+        }
+    }
+
+    public PVector getPosReltoCustomSpace(PVector posEE){
+        PVector posReltoCustomSpace = new PVector(0, 0);
+        posReltoCustomSpace.set( (posEE.x+this.w / 2 / this.scale)*this.scale, (posEE.y - this.yinitial)*this.scale);
+        return posReltoCustomSpace;
     }
 
 
