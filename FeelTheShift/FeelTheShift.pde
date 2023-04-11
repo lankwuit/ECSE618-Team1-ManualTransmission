@@ -187,7 +187,7 @@ void setup(){
 
 
    /*************************************************************************/
-   haplyBoard          = new Board(this,  "/dev/cu.usbmodem142401", 0);
+   haplyBoard          = new Board(this,  "COM9", 0);
    widgetOne           = new Device(widgetOneID, haplyBoard);
    pantograph          = new Pantograph();
   

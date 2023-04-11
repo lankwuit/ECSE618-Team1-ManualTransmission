@@ -285,7 +285,7 @@ public class GearShifter{
             float l = fWall.mag(); // length of the force vector
 
             translate(x,y); // translate to the centre of the end effector
-            rotate(atan2(fWall.x, fWall.y)); // rotate the force vector to the direction of the force vector
+            rotate(atan2(-fWall.y, -fWall.x)); // rotate the force vector to the direction of the force vector
             line(0, 0, l, 0); // draw a line from the centre of the end effector to the end of the force vector
             
             translate(l, 0); // translate to the end of the force vector
