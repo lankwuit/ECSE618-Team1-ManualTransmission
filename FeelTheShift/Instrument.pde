@@ -188,9 +188,9 @@ public class Meter {
 
 
     if (this.sound != null){
-        float loc = this.sound.duration()*( val/this.max_value ); // set the start location the sound
-        this.sound.stop();
-        this.sound.amp( 0.7 ); // set the volume
+        float loc = this.sound.duration()*( 0.9 ); // set the start location the sound
+        // this.sound.stop();
+        // this.sound.amp( 0.7 ); // set the volume
         this.sound.jump(loc); // play the sound
     }
   }

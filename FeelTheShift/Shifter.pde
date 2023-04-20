@@ -22,22 +22,22 @@ public class GearShifter{
     
     // ****************************** //
     // Bereket's parameters
-    // float kpwall = 800*10; // Bereket: I need to multiply by 10 to make it work
-    // float kiwall = 200*10;
-    // float kismooth= 700*10;
-    // float kdwall = 650*10;
-    // float curvefactor = 0.05*2;
-    // float neutralRecoveryForce = 2.5*75; // Bereket : I need to multiply by 75 to make it work
+    float kpwall = 800*10; // Bereket: I need to multiply by 10 to make it work
+    float kiwall = 200*10;
+    float kismooth= 700*10;
+    float kdwall = 650*10;
+    float curvefactor = 0.05*2;
+    float neutralRecoveryForce = 2.5*75; // Bereket : I need to multiply by 75 to make it work
     // ****************************** //
 
     // ****************************** //
     // uncomment this to use the old parameters
-     float kpwall = 800*5;
-     float kiwall = 200*5;
-     float kismooth= 700;
-     float kdwall = 800*5;
-     float curvefactor = 0.1;
-     float neutralRecoveryForce = 2.5;
+    //  float kpwall = 800*5;
+    //  float kiwall = 200*5;
+    //  float kismooth= 700;
+    //  float kdwall = 800*5;
+    //  float curvefactor = 0.1;
+    //  float neutralRecoveryForce = 2.5;
     // ****************************** //
     
     float initial_offset = 0.0;
@@ -285,7 +285,7 @@ public class GearShifter{
             float l = fWall.mag(); // length of the force vector
 
             translate(x,y); // translate to the centre of the end effector
-            rotate(atan2(fWall.x, fWall.y)); // rotate the force vector to the direction of the force vector
+            rotate(atan2(-fWall.y, -fWall.x)); // rotate the force vector to the direction of the force vector
             line(0, 0, l, 0); // draw a line from the centre of the end effector to the end of the force vector
             
             translate(l, 0); // translate to the end of the force vector
