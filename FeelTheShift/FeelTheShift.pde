@@ -186,21 +186,21 @@ void setup(){
 
 
    /*************************************************************************/
-   haplyBoard          = new Board(this,  "/dev/cu.usbmodem141401", 0);
-   widgetOne           = new Device(widgetOneID, haplyBoard);
-   pantograph          = new Pantograph();
+  //  haplyBoard          = new Board(this,  "/dev/cu.usbmodem142301", 0);
+  //  widgetOne           = new Device(widgetOneID, haplyBoard);
+  //  pantograph          = new Pantograph();
   
-   widgetOne.set_mechanism(pantograph);
+  //  widgetOne.set_mechanism(pantograph);
   
-   ////start: added to fix inverse motion of the ball
-   widgetOne.add_actuator(1, CCW, 2);
-   widgetOne.add_actuator(2, CW, 1);
+  //  ////start: added to fix inverse motion of the ball
+  //  widgetOne.add_actuator(1, CCW, 2);
+  //  widgetOne.add_actuator(2, CW, 1);
 
-   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-   widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-   widgetOne.device_set_parameters();
+  //  widgetOne.device_set_parameters();
    /*************************************************************************/
 
   // engine sound
@@ -652,17 +652,19 @@ void keyReleased(){
     reset_button.release();
 
 
-    if(game_state == 1 && false){
+    if(game_state == 2 && endscreen_state == 1){
       
-      backgroundGif.stop(); // stop the gif
-      main_screen_sound.stop();
-      engine_idle_sound.stop();
+      endGif.stop(); // stop the gif
+      end_screen_sound.stop();
+
+      // reset the game
       start_screen_sound.amp(background_volume);
       start_screen_sound.loop();
       score_text.setValue(0);
       time_text.setValue(0);
 
       game_state = 0; // reset game
+      endscreen_state = 0;
     }
   }
 
@@ -674,6 +676,9 @@ void keyReleased(){
       main_screen_sound.stop();
       engine_idle_sound.stop();
 
+      // stop the main gif
+      backgroundGif.stop(); // stop the gif
+
 
       game_state = 2; // end game
       endGif.loop(); // play the gif
@@ -682,7 +687,7 @@ void keyReleased(){
   }
 
   if(key == 'f' || key == 'F'){
-    //mechanism.showForce(false);
+    mechanism.showForce(false);
   }
 }
 
@@ -850,21 +855,21 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-    if(haplyBoard.data_available()){
-    widgetOne.device_read_data();
+    // if(haplyBoard.data_available()){
+    // widgetOne.device_read_data();
     
-     angles.set(widgetOne.get_device_angles()); 
-     pos_ee.set(widgetOne.get_device_position(angles.array()));
-     pos_ee.set(mechanism.device_to_graphics(pos_ee));  
+    //  angles.set(widgetOne.get_device_angles()); 
+    //  pos_ee.set(widgetOne.get_device_position(angles.array()));
+    //  pos_ee.set(mechanism.device_to_graphics(pos_ee));  
 
 
-     if(game_state == 1)
-       mechanism.forcerender(pos_ee);
+    //  if(game_state == 1)
+    //    mechanism.forcerender(pos_ee);
 
 
-    }    
-    torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
-    widgetOne.device_write_torques();
+    // }    
+    // torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
+    // widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/
   
     rendering_force = false;
