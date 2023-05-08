@@ -665,6 +665,7 @@ void keyReleased(){
 
       game_state = 0; // reset game
       endscreen_state = 0;
+      user_name = ""; // reset the user name
     }
   }
 
