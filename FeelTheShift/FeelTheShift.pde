@@ -110,10 +110,10 @@ StringList gear_seq = new StringList(new String[] {
   });
 int gear_seq_index = 0;
 
-SoundFile engine_rev_sound, engine_idle_sound;
-SoundFile engine_start, start_screen_sound, main_screen_sound;
-float background_volume = 0.05; // background music volume
-float engine_volume = 0.1; // background engine volume
+SoundFile engine_rev_sound, engine_idle_sound, engine_shift_sound;
+SoundFile engine_start, start_screen_sound, main_screen_sound, end_screen_sound;
+float background_volume = 0.01; // background music volume
+float engine_volume = 0.10; // background engine volume
 
 /* define sensors */
 Meter target_text, score_text, time_text, rpm_sensor, speed_sensor;
@@ -171,7 +171,6 @@ void setup(){
   backgroundGif = new Gif(this, "../imgs/bg_gameplay.gif");
   splashGif = new Gif(this, "../imgs/bg_splash.gif");
   endGif = new Gif(this, "../imgs/bg_end.gif");
-  splashGif.loop(); // play the gif
   
   /* device setup */
   
@@ -187,33 +186,41 @@ void setup(){
 
 
    /*************************************************************************/
-   haplyBoard          = new Board(this,  "COM9", 0);
-   widgetOne           = new Device(widgetOneID, haplyBoard);
-   pantograph          = new Pantograph();
+  //  haplyBoard          = new Board(this,  "/dev/cu.usbmodem142301", 0);
+  //  widgetOne           = new Device(widgetOneID, haplyBoard);
+  //  pantograph          = new Pantograph();
   
-   widgetOne.set_mechanism(pantograph);
+  //  widgetOne.set_mechanism(pantograph);
   
-   ////start: added to fix inverse motion of the ball
-   widgetOne.add_actuator(1, CCW, 2);
-   widgetOne.add_actuator(2, CW, 1);
+  //  ////start: added to fix inverse motion of the ball
+  //  widgetOne.add_actuator(1, CCW, 2);
+  //  widgetOne.add_actuator(2, CW, 1);
 
-   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-   widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-   widgetOne.device_set_parameters();
+  //  widgetOne.device_set_parameters();
    /*************************************************************************/
 
   // engine sound
-  //engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
-  //engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
-  //engine_idle_sound.loop();
+  engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
+  engine_rev_sound.amp(engine_volume*0.25);
+  engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
+  engine_idle_sound.amp(engine_volume);
 
   engine_start = new SoundFile(this, "../audio/engine-start.wav");
   main_screen_sound = new SoundFile(this, "../audio/main_audio.wav");
+  main_screen_sound.amp(background_volume*0.5);
   start_screen_sound = new SoundFile(this, "../audio/title_audio.wav");
-  start_screen_sound.amp(background_volume);
+  start_screen_sound.amp(background_volume*0.5);
   start_screen_sound.loop(); // play the sound while in game_state 0
+
+  end_screen_sound = new SoundFile(this, "../audio/end_audio.wav");
+  end_screen_sound.amp(background_volume*10);
+
+  engine_shift_sound = new SoundFile(this, "../audio/shifting_sfx.wav");
+  engine_shift_sound.amp(engine_volume);
 
 
   // game text
@@ -292,7 +299,7 @@ void setup(){
   speed_sensor.setFontSize(rpm_font_size);
 
   rpm_sensor.setValue(MIN_RPM);
-  //rpm_sensor.setSound(engine_rev_sound);
+  rpm_sensor.setSound(engine_rev_sound);
   
   // pedels icons
   clutchImg = loadImage("../imgs/clutch_white.png");
@@ -301,6 +308,7 @@ void setup(){
 
   // pedal sounds
   pedal_sound = new SoundFile(this, "../audio/pedal.mp3");
+  pedal_sound.amp(engine_volume);
   
   // setup pedals
   clutch = new Meter(clutch_x, gas_y, clutchImg.width, clutchImg.height, METER_TYPE.PEDAL); // draw brake pedel
@@ -349,6 +357,9 @@ void setup(){
   /* setup simulation thread to run at 1kHz */ 
   SimulationThread st = new SimulationThread();
   scheduler.scheduleAtFixedRate(st, 1, 1, MILLISECONDS);
+
+  // start the gif
+  splashGif.loop(); // play the gif
 }
 /* end setup section ***************************************************************************************************/
 
@@ -360,7 +371,7 @@ void draw(){
   if(rendering_force == false && game_state == 1){
     imageMode(CORNER);
     tint(255*0.6); // darken the background a bit by 60%
-    image(backgroundGif, 0 ,0, w, h);
+    image(backgroundGif, -50 ,-50, w+50, h+50);
     
     rpm_sensor.draw();
     speed_sensor.draw();
@@ -385,8 +396,8 @@ void draw(){
     rpm_sensor.adjustColour(mechanism.getMinRPM(target_gear), mechanism.getMaxRPM(target_gear));
     checkGear(cur_gear);
 
-    // decrase rpm value every 2 frames
-    if(frameCount % 2 == 0){
+    // decrase rpm value every 4 frames
+    if(frameCount % 4 == 0){
       rpm_sensor.decreaseValue();
     }
 
@@ -414,7 +425,7 @@ void draw(){
 
   }else if(rendering_force == false && game_state == 0){ // splash screen
     imageMode(CORNER);
-    image(splashGif, 0 ,0, w, h);
+    image(splashGif, -50 ,-50, w+50, h+50);
 
     // draw the title
     textFont(title_font, title_font_size); // specify font
@@ -587,22 +598,24 @@ void keyPressed(){
   if(key == 'd' || key == 'D'){
     gas.press();
     rpm_sensor.increaseValue(); // increase the rpm value
-    speed_sensor.increaseValue(); // increase the speed value
+    
+    // only increase the speed if the current gear is not neutral
+    if(mechanism.getGear(pos_ee) != GEAR.NEUTRAL)
+      speed_sensor.increaseValue(); // increase the speed value
   }
 
   if(key == 'x' || key == 'X'){
     if(game_state == 0){
-      engine_start.amp(engine_volume);
-      start_screen_sound.amp(background_volume*0.5);
+      engine_start.amp(engine_volume*0.5);
+      start_screen_sound.amp(background_volume*0.25);
       engine_start.play();
       delay((int) (engine_start.duration() * 1000)); // wait for the engine start sound to finish
       start_screen_sound.stop();
       splashGif.stop();
       
-      main_screen_sound.amp(background_volume);
       main_screen_sound.loop();
-      // engine_idle_sound.amp(engine_volume);
-      // engine_idle_sound.loop();
+      engine_idle_sound.amp(engine_volume);
+      engine_idle_sound.loop();
 
       game_state = 1; // start game
       backgroundGif.loop(); // play the gif
@@ -637,22 +650,28 @@ void keyReleased(){
     gas.release();
   }
 
-
+  // RESET the game when the "R" key is pressed
+  // only reset once the game is over and the user has saved their score
   if(key == 'r' || key == 'R'){
     reset_button.release();
 
-
-    if(game_state == 1 && false){
+    if(game_state == 2 && endscreen_state == 1){
       
-      backgroundGif.stop(); // stop the gif
-      main_screen_sound.stop();
-      // engine_idle_sound.stop();
+      endGif.stop(); // stop the gif
+      end_screen_sound.stop();
+
+      // reset the game
       start_screen_sound.amp(background_volume);
       start_screen_sound.loop();
       score_text.setValue(0);
       time_text.setValue(0);
 
       game_state = 0; // reset game
+      endscreen_state = 0;
+      user_name = ""; // reset the user name
+
+      rpm_sensor.setValue(MIN_RPM);
+      speed_sensor.setValue(0);
     }
   }
 
@@ -662,11 +681,15 @@ void keyReleased(){
     if(game_state == 1){
       // stop the game audio  
       main_screen_sound.stop();
-      // engine_idle_sound.stop();
+      engine_idle_sound.stop();
+
+      // stop the main gif
+      backgroundGif.stop(); // stop the gif
 
 
       game_state = 2; // end game
       endGif.loop(); // play the gif
+      end_screen_sound.loop();
     } 
   }
 
@@ -777,6 +800,7 @@ void checkGear(GEAR cur_gear){
     if(mechanism.getPrevGear() != cur_gear){ // check if the gear has changed    
       boolean canChangeGear = shiftGear(cur_gear);
       boolean targetGearReached = reachedTargetGear(cur_gear);
+      engine_shift_sound.play(); // play the shift sound
 
       boolean isGoodShift = true; // assume good shift
       int cur_rpm = rpm_sensor.getValue();
@@ -785,6 +809,13 @@ void checkGear(GEAR cur_gear){
       }
 
       if(canChangeGear && isGoodShift && targetGearReached){ // have reached target gear and made a great shift
+
+        // reset the highlights
+        this.target_text.highlight(false); // reset the target gear highlight
+        this.clutch.highlight(false); // reset the clutch highlight
+        this.gas.highlight(false); // reset the rpm highlight
+
+
         // good shift
         println("Good shift! Current gear: " + cur_gear);
         score_text.increaseValue(10); // 10 points for a good shift
@@ -794,6 +825,8 @@ void checkGear(GEAR cur_gear){
         // change the target to the next gear
         gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
         target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+
+        
 
       }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
         // good shift
@@ -808,11 +841,13 @@ void checkGear(GEAR cur_gear){
           println("Bad shift! Clutch not engaged");
           score_text.decreaseValue(5); // 10 points penalty for a bad shift
           record_text2.increaseValue(5); // add to the shift score
+          this.clutch.highlight(true); // highlight the clutch since it was not engaged
         }
         if(!isGoodShift){
           println("Bad shift! Wrong RPM: " + cur_rpm);
           score_text.decreaseValue(5); // 10 points penalty for a bad shift
           record_text2.increaseValue(5); // add to the shift score
+          this.gas.highlight(true); // highlight the rpm sensor since it was not in the correct range
         }
 
         record_text2.addShiftCount(); // add to the shift count
@@ -825,6 +860,7 @@ void checkGear(GEAR cur_gear){
         score_text.decreaseValue(10); // 10 points penalty for a bad shift
         record_text2.addShiftCount(); // add to the shift count
         record_text2.increaseValue(10); // add to the shift score
+        this.target_text.highlight(true); // highlight the target gear since it was not reached
       }
     }
 }
@@ -838,21 +874,21 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-    if(haplyBoard.data_available()){
-     widgetOne.device_read_data();
+    // if(haplyBoard.data_available()){
+    // widgetOne.device_read_data();
     
-      angles.set(widgetOne.get_device_angles()); 
-      pos_ee.set(widgetOne.get_device_position(angles.array()));
-      pos_ee.set(mechanism.device_to_graphics(pos_ee));  
+    //  angles.set(widgetOne.get_device_angles()); 
+    //  pos_ee.set(widgetOne.get_device_position(angles.array()));
+    //  pos_ee.set(mechanism.device_to_graphics(pos_ee));  
 
 
-      if(game_state == 1)
-        mechanism.forcerender(pos_ee);
+    //  if(game_state == 1)
+    //    mechanism.forcerender(pos_ee);
 
 
-    }    
-     torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
-     widgetOne.device_write_torques();
+    // }    
+    // torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
+    // widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/
   
     rendering_force = false;

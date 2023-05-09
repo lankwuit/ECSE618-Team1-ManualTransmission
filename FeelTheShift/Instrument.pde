@@ -109,6 +109,7 @@ public class Meter {
       case CLOCK:
         int minutes = value / 60;
         int seconds = value % 60;
+        this.value_int = value;
         this.value = nf(minutes, 2, 0) + ":" + nf(seconds, 2, 0);
         break;
 
@@ -188,9 +189,9 @@ public class Meter {
 
 
     if (this.sound != null){
-        float loc = this.sound.duration()*( val/this.max_value ); // set the start location the sound
-        this.sound.stop();
-        this.sound.amp( 0.7 ); // set the volume
+        float loc = this.sound.duration()*( 0.9 ); // set the start location the sound
+        // this.sound.stop();
+        // this.sound.amp( 0.7 ); // set the volume
         this.sound.jump(loc); // play the sound
     }
   }
@@ -461,5 +462,12 @@ public class Meter {
   
   public void release(){
     this.pressed = false;
+  }
+
+  public void highlight(boolean should_highlight){
+    if(should_highlight)
+      this.font_color = font_color_ok;
+    else
+      this.font_color = color(255);
   }
 }
