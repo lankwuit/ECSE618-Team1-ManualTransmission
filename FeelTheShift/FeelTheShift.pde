@@ -803,6 +803,13 @@ void checkGear(GEAR cur_gear){
       }
 
       if(canChangeGear && isGoodShift && targetGearReached){ // have reached target gear and made a great shift
+
+        // reset the highlights
+        this.target_text.highlight(false); // reset the target gear highlight
+        this.clutch.highlight(false); // reset the clutch highlight
+        this.gas.highlight(false); // reset the rpm highlight
+
+
         // good shift
         println("Good shift! Current gear: " + cur_gear);
         score_text.increaseValue(10); // 10 points for a good shift
@@ -812,6 +819,8 @@ void checkGear(GEAR cur_gear){
         // change the target to the next gear
         gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
         target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+
+        
 
       }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
         // good shift
@@ -826,11 +835,13 @@ void checkGear(GEAR cur_gear){
           println("Bad shift! Clutch not engaged");
           score_text.decreaseValue(5); // 10 points penalty for a bad shift
           record_text2.increaseValue(5); // add to the shift score
+          this.clutch.highlight(true); // highlight the clutch since it was not engaged
         }
         if(!isGoodShift){
           println("Bad shift! Wrong RPM: " + cur_rpm);
           score_text.decreaseValue(5); // 10 points penalty for a bad shift
           record_text2.increaseValue(5); // add to the shift score
+          this.gas.highlight(true); // highlight the rpm sensor since it was not in the correct range
         }
 
         record_text2.addShiftCount(); // add to the shift count
@@ -843,6 +854,7 @@ void checkGear(GEAR cur_gear){
         score_text.decreaseValue(10); // 10 points penalty for a bad shift
         record_text2.addShiftCount(); // add to the shift count
         record_text2.increaseValue(10); // add to the shift score
+        this.target_text.highlight(true); // highlight the target gear since it was not reached
       }
     }
 }
