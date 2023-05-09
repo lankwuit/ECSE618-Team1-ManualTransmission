@@ -598,7 +598,10 @@ void keyPressed(){
   if(key == 'd' || key == 'D'){
     gas.press();
     rpm_sensor.increaseValue(); // increase the rpm value
-    speed_sensor.increaseValue(); // increase the speed value
+    
+    // only increase the speed if the current gear is not neutral
+    if(mechanism.getGear(pos_ee) != GEAR.NEUTRAL)
+      speed_sensor.increaseValue(); // increase the speed value
   }
 
   if(key == 'x' || key == 'X'){
@@ -647,10 +650,10 @@ void keyReleased(){
     gas.release();
   }
 
-
+  // RESET the game when the "R" key is pressed
+  // only reset once the game is over and the user has saved their score
   if(key == 'r' || key == 'R'){
     reset_button.release();
-
 
     if(game_state == 2 && endscreen_state == 1){
       
@@ -666,6 +669,9 @@ void keyReleased(){
       game_state = 0; // reset game
       endscreen_state = 0;
       user_name = ""; // reset the user name
+
+      rpm_sensor.setValue(MIN_RPM);
+      speed_sensor.setValue(0);
     }
   }
 
