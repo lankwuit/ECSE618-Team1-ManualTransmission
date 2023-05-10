@@ -31,6 +31,16 @@ public class GearShifter{
     // ****************************** //
 
     // ****************************** //
+    //  Good force parameters
+    // float kpwall = 800;
+    // float kiwall = 200;
+    // float kismooth= 700;
+    // float kdwall = 650;
+    // float curvefactor = 0.05;
+    // float neutralRecoveryForce = 2.5;
+    // ****************************** //
+
+    // ****************************** //
     // uncomment this to use the old parameters
     //  float kpwall = 800*5;
     //  float kiwall = 200*5;
