@@ -337,8 +337,7 @@ public class GearShifter{
     };
     
     PVector curveforcerender(PVector posReltoCustomSpace, float centerx, float centery){
-        //这个方程在已经进入那么所在区之后进行条件判断
-        //什么时候turned on呢， 判断euclidean distance 在圆弧范围之内的时候
+        //turned on， euclidean distance
         PVector temp = new PVector(centerx*w/scale,centery*h/scale);
         float distance =PVector.dist(posReltoCustomSpace,temp);
         float penamount = rEE-curveREEallowance +distance - slotA_W;
@@ -365,7 +364,7 @@ public class GearShifter{
         PVector posReltoCustomSpace = new PVector(0, 0);
         posReltoCustomSpace.set(posEE.x+this.w / 2 / this.scale, posEE.y - this.yinitial);
 
-        // * topcord 是按照 % width 来做的，width 为常量关于pixel的 posEE是按照米的 ，rEE 是按照M的
+        // * topcord % width ，width pixel posEE ，rEE
         float temp = 0.0, temp2=0.0;
         //force feedback for all vertical walls
         if (topCoords[3]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < topCoords[1]*h/scale){
@@ -541,6 +540,10 @@ public class GearShifter{
 
     }
 
+
+    /**
+    * function to calculate the force to bring the end effector back to the center of the shifter
+    */
     private void NeutralCentering(PVector posEE){
         float dist_X = (posEE.x+w/2/scale) - neutralCenter[0]*w/scale;
         float dist_Y = (posEE.y-yinitial) - neutralCenter[1]*h/scale;
@@ -563,7 +566,7 @@ public class GearShifter{
         
     }
 
-        public GEAR getGear(PVector posEE){
+    public GEAR getGear(PVector posEE){
 
         /*change coordinate of the posEE to the actual coordinate that we are using */
         PVector posReltoCustomSpace = new PVector(0, 0);
@@ -625,12 +628,9 @@ public class GearShifter{
 
         if(this.clutch == false){ // clutch is not engaged
             // Grind Gear force added in the shifter section. Right now it is more of a wall effect
-            // TODO: ADD SOUND EFFECT
-            // TODO: ADD VISUAL EFFECT
             return false; // cannot change gear
 
         } 
-        // TODO: ADD VISUAL EFFECT
         return true; // gear changed
     }
 

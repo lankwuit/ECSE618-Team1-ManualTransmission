@@ -170,7 +170,7 @@ void setup(){
   size(1000, 400);
   backgroundGif = new Gif(this, "../imgs/bg_gameplay.gif");
   splashGif = new Gif(this, "../imgs/bg_splash.gif");
-  endGif = new Gif(this, "../imgs/bg_end.gif");
+  // endGif = new Gif(this, "../imgs/bg_end.gif");
   
   /* device setup */
   
@@ -186,41 +186,41 @@ void setup(){
 
 
    /*************************************************************************/
-   haplyBoard          = new Board(this,  "/dev/cu.usbmodem141401", 0);
-   widgetOne           = new Device(widgetOneID, haplyBoard);
-   pantograph          = new Pantograph();
+  //  haplyBoard          = new Board(this,  "/dev/cu.usbmodem142301", 0);
+  //  widgetOne           = new Device(widgetOneID, haplyBoard);
+  //  pantograph          = new Pantograph();
   
-   widgetOne.set_mechanism(pantograph);
+  //  widgetOne.set_mechanism(pantograph);
   
-   ////start: added to fix inverse motion of the ball
-   widgetOne.add_actuator(1, CCW, 2);
-   widgetOne.add_actuator(2, CW, 1);
+  //  ////start: added to fix inverse motion of the ball
+  //  widgetOne.add_actuator(1, CCW, 2);
+  //  widgetOne.add_actuator(2, CW, 1);
 
-   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-   widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-   widgetOne.device_set_parameters();
+  //  widgetOne.device_set_parameters();
    /*************************************************************************/
 
-  // engine sound
-  engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
-  engine_rev_sound.amp(engine_volume*0.25);
-  engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
-  engine_idle_sound.amp(engine_volume);
+  // // engine sound
+  // engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
+  // engine_rev_sound.amp(engine_volume*0.25);
+  // engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
+  // engine_idle_sound.amp(engine_volume);
 
-  engine_start = new SoundFile(this, "../audio/engine-start.wav");
-  main_screen_sound = new SoundFile(this, "../audio/main_audio.wav");
-  main_screen_sound.amp(background_volume*0.5);
-  start_screen_sound = new SoundFile(this, "../audio/title_audio.wav");
-  start_screen_sound.amp(background_volume*0.5);
-  start_screen_sound.loop(); // play the sound while in game_state 0
+  // engine_start = new SoundFile(this, "../audio/engine-start.wav");
+  // main_screen_sound = new SoundFile(this, "../audio/main_audio.wav");
+  // main_screen_sound.amp(background_volume*0.5);
+  // start_screen_sound = new SoundFile(this, "../audio/title_audio.wav");
+  // start_screen_sound.amp(background_volume*0.5);
+  // start_screen_sound.loop(); // play the sound while in game_state 0
 
-  end_screen_sound = new SoundFile(this, "../audio/end_audio.wav");
-  end_screen_sound.amp(background_volume*10);
+  // end_screen_sound = new SoundFile(this, "../audio/end_audio.wav");
+  // end_screen_sound.amp(background_volume*10);
 
-  engine_shift_sound = new SoundFile(this, "../audio/shifting_sfx.wav");
-  engine_shift_sound.amp(engine_volume);
+  // engine_shift_sound = new SoundFile(this, "../audio/shifting_sfx.wav");
+  // engine_shift_sound.amp(engine_volume);
 
 
   // game text
@@ -299,45 +299,32 @@ void setup(){
   speed_sensor.setFontSize(rpm_font_size);
 
   rpm_sensor.setValue(MIN_RPM);
-  rpm_sensor.setSound(engine_rev_sound);
   
   // pedels icons
   clutchImg = loadImage("../imgs/clutch_white.png");
   brakeImg = loadImage("../imgs/brake_white.png");
   gasImg = loadImage("../imgs/gas_white.png");
 
-  // pedal sounds
-  pedal_sound = new SoundFile(this, "../audio/pedal.mp3");
-  pedal_sound.amp(engine_volume);
   
   // setup pedals
   clutch = new Meter(clutch_x, gas_y, clutchImg.width, clutchImg.height, METER_TYPE.PEDAL); // draw brake pedel
   clutch.setIcon(clutchImg);
-  clutch.setSound(pedal_sound);
   clutch.setName("CLUTCH");
-  clutch.setValue("A");
+  clutch.setValue("");
   clutch.setFontSize(pedal_font_size);
   
   brake = new Meter(brake_x, gas_y, brakeImg.width, brakeImg.height, METER_TYPE.PEDAL); // draw brake pedel
   brake.setIcon(brakeImg); 
-  brake.setSound(pedal_sound);
   brake.setName("BRAKE");
-  brake.setValue("S");
+  brake.setValue("");
   brake.setFontSize(pedal_font_size);
   
   gas = new Meter(gas_x, gas_y, gasImg.width, gasImg.height, METER_TYPE.PEDAL); // draw brake pedel
   gas.setIcon(gasImg);
-  gas.setSound(pedal_sound);  
   gas.setName("GAS");
-  gas.setValue("D");
+  gas.setValue("");
   gas.setFontSize(pedal_font_size);
 
-
-  // scores file setup (load file)
-  scores_object = loadJSONArray("scores.json");
-  if (scores_object == null) {
-    scores_object = new JSONArray();
-  }
 
   // setup title font
   title_font = createFont("../fonts/Disco Duck 3D Italic.otf", title_font_size, true);
@@ -345,6 +332,10 @@ void setup(){
   // ! create the instance of mechanism, passing through world dimensions, world instance, reference frame
   mechanism = new GearShifter(w, h, pixelsPerMeter);
   mechanism.setMinMaxRpm(MIN_RPM, MAX_RPM);
+
+  // engage the clutch
+  clutch.press();
+  mechanism.setClutch(true);
   
   /* Haptic Tool Initialization */
   mechanism.create_ee();
@@ -368,24 +359,15 @@ void setup(){
 /* draw section ********************************************************************************************************/
 void draw(){
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-  if(rendering_force == false && game_state == 1){
+  if(rendering_force == false && game_state == 1){ // game screen
     imageMode(CORNER);
     tint(255*0.6); // darken the background a bit by 60%
     image(backgroundGif, -50 ,-50, w+50, h+50);
     
-    rpm_sensor.draw();
-    speed_sensor.draw();
-
-    target_text.draw();
-    score_text.draw();
-    time_text.draw();
-  
     clutch.draw();
     brake.draw();
     gas.draw();
 
-    end_button.draw();
-    
     mechanism.draw();
     mechanism.draw_ee(pos_ee.x, pos_ee.y);
 
@@ -393,35 +375,8 @@ void draw(){
     GEAR cur_gear = mechanism.getGear(pos_ee);
     String target_gear_str = gear_seq.get(gear_seq_index);
     GEAR target_gear = getGearFromString(target_gear_str);
-    rpm_sensor.adjustColour(mechanism.getMinRPM(target_gear), mechanism.getMaxRPM(target_gear));
+
     checkGear(cur_gear);
-
-    // decrase rpm value every 4 frames
-    if(frameCount % 4 == 0){
-      rpm_sensor.decreaseValue();
-    }
-
-    // decrase speed value every 10 frames
-    if(frameCount % 10 == 0){
-      speed_sensor.decreaseValue();
-    }
-
-    // increase time every 1 second
-    if(millis() - last_time > 1000){
-      last_time = millis();
-      time_text.increaseValue(1);
-    }
-
-    // highlight the up/down arrow based on the current and target gear
-    if( shouldShiftUp(cur_gear) ){
-        up_arrow.draw();
-        up_arrow.press();
-        down_arrow.release();
-    }else{
-        down_arrow.draw();
-        down_arrow.press();
-        up_arrow.release();
-    }
 
   }else if(rendering_force == false && game_state == 0){ // splash screen
     imageMode(CORNER);
@@ -490,145 +445,17 @@ void draw(){
     // draw the knob
     mechanism.draw_ee(pos_ee.x, pos_ee.y);
 
-  } else if (rendering_force == false && game_state == 2){ // end screen
-    imageMode(CORNER);
-    image(endGif, 0 ,0, w, h);
-
-    // draw the title
-    textFont(title_font, title_font_size); // specify font
-    fill(255);
-    stroke(0);
-    textAlign(CENTER, TOP);
-    text(title_text, w/2, 16);
-
-    // create a gradient for the text
-    color c1 = #E85959;
-    color c2 = #F4A862;
-
-    // draw a dark semi-transparent rectangle frame in the bottom half of the screen
-    rectMode(CORNER);
-    fill(0,0,0, 70);
-    strokeWeight(0);
-    stroke(c1);
-    
-    rect(32, 16 + title_font_size + 19, 945, 292);
-
-    // endscreen state 0
-
-    if(endscreen_state == 0){
-      // ! for only the end screen, not used in the scoreboard
-      grade_text.setGrading(score_text.getValue());
-      grade_text.draw();
-      record_text1.draw();
-      record_text2.draw();
-
-      total_score_text.setValue(score_text.getValue());
-      total_score_text.draw();
-      timeend_text.setValue(time_text.getValue());
-      timeend_text.draw();
-
-      // draw user input text
-      textFont(score_text.getFont(), 40); // specify font
-      fill(255);
-      stroke(0);
-      textAlign(CENTER, BOTTOM);
-    
-      int missing_length = tmp_name.length() - user_name.length();
-      if(missing_length > 0){ // missing text so replace with underscores
-        String tmp = user_name + tmp_name.substring(0, missing_length);
-         text(tmp, w/2, 16 + title_font_size + 19 + 292 - 32);
-      }else{
-         text(user_name, w/2, 16 + title_font_size + 19 + 292 - 32);
-      }
-
-
-    }else{
-      // draw the high score title
-      textFont(score_text.getFont(), 32); // specify font
-      fill(255);
-      stroke(0);
-      textAlign(CENTER, TOP);
-      text("HIGH SCORE", w/2, 16 + title_font_size + 32);
-
-      // draw the high score table
-      textFont(score_text.getFont(), 16); // specify font
-      fill(255);
-      stroke(0);
-      textAlign(CENTER, TOP);
-      text("ALL TIME", w/2, 16 + title_font_size + 36 + 32);
-
-      for(int i = 0; i < scores_object.size(); i++){
-        textFont(score_text.getFont(), 12); // specify font
-        fill(255);
-        stroke(0);
-
-        // draw the high score text
-
-        float text_width = textWidth("-0000 00:00 AAAA");
-        textAlign(RIGHT, TOP);
-        text(str(i+1) + " ", w/2 - text_width/2 - 8, 16 + title_font_size + 32 + 36 + (i+1)*24 + i*12);
-
-        textAlign(LEFT, TOP);
-        String high_score_text = scores_object.getJSONObject(i).getString("score") + " " + scores_object.getJSONObject(i).getString("time") + " " + scores_object.getJSONObject(i).getString("name");
-        text(high_score_text , w/2 - text_width/2, 16 + title_font_size + 32 + 36 + (i+1)*24 + i*12);
-
-        if (i == 3) // only draw the top 4 scores
-          break;
-      }
-
-    }
-    
-
   }
 }
 /* end draw section ****************************************************************************************************/
 
 void keyPressed(){
-  
-  if(key == 'a' || key == 'A'){
-    clutch.press();
-    mechanism.setClutch(true); // engage the clutch
-  }
-  if(key == 's' || key == 'S'){
-    brake.press();
-
-    rpm_sensor.decreaseValue(); // decrease the rpm value
-    speed_sensor.decreaseValue(); // decrease the speed value
-  }
-  if(key == 'd' || key == 'D'){
-    gas.press();
-    rpm_sensor.increaseValue(); // increase the rpm value
-    
-    // only increase the speed if the current gear is not neutral
-    if(mechanism.getGear(pos_ee) != GEAR.NEUTRAL)
-      speed_sensor.increaseValue(); // increase the speed value
-  }
-
   if(key == 'x' || key == 'X'){
     if(game_state == 0){
-      engine_start.amp(engine_volume*0.5);
-      start_screen_sound.amp(background_volume*0.25);
-      engine_start.play();
-      delay((int) (engine_start.duration() * 1000)); // wait for the engine start sound to finish
-      start_screen_sound.stop();
       splashGif.stop();
-      
-      main_screen_sound.loop();
-      engine_idle_sound.amp(engine_volume);
-      engine_idle_sound.loop();
-
       game_state = 1; // start game
       backgroundGif.loop(); // play the gif
     }
-  }
-
-  if(key == 'r' || key == 'R'){
-    reset_button.press();
-  }
-
-  if(key == 'e' || key == 'E'){
-    end_button.press();
-    end_button.setValue("RELEASE E");
   }
 
   if(key == 'f' || key == 'F'){
@@ -638,66 +465,6 @@ void keyPressed(){
 }
 
 void keyReleased(){
-  
-  if(key == 'a' || key == 'A'){
-    clutch.release();
-    mechanism.setClutch(false); // disengage the clutch
-  }
-  if(key == 's' || key == 'S'){
-    brake.release();
-  }
-  if(key == 'd' || key == 'D'){
-    gas.release();
-  }
-
-  // RESET the game when the "R" key is pressed
-  // only reset once the game is over and the user has saved their score
-  if(key == 'r' || key == 'R'){
-    reset_button.release();
-
-    if(game_state == 2 && endscreen_state == 1){
-      
-      endGif.stop(); // stop the gif
-      end_screen_sound.stop();
-
-      // reset the game
-      start_screen_sound.amp(background_volume);
-      start_screen_sound.loop();
-      score_text.setValue(0);
-      time_text.setValue(0);
-
-      game_state = 0; // reset game
-      endscreen_state = 0;
-      user_name = ""; // reset the user name
-      gear_seq_index = 0; // reset the sequence index
-
-      // reset the highlights
-      this.target_text.highlight(false); // reset the target gear highlight
-      this.clutch.highlight(false); // reset the clutch highlight
-      this.gas.highlight(false); // reset the rpm highlight
-  
-      rpm_sensor.setValue(MIN_RPM);
-      speed_sensor.setValue(0);
-    }
-  }
-
-  if(key == 'e' || key == 'E'){
-    end_button.release();
-
-    if(game_state == 1){
-      // stop the game audio  
-      main_screen_sound.stop();
-      engine_idle_sound.stop();
-
-      // stop the main gif
-      backgroundGif.stop(); // stop the gif
-
-
-      game_state = 2; // end game
-      endGif.loop(); // play the gif
-      end_screen_sound.loop();
-    } 
-  }
 
   if(key == 'f' || key == 'F'){
     mechanism.showForce(false);
@@ -806,7 +573,6 @@ void checkGear(GEAR cur_gear){
     if(mechanism.getPrevGear() != cur_gear){ // check if the gear has changed    
       boolean canChangeGear = shiftGear(cur_gear);
       boolean targetGearReached = reachedTargetGear(cur_gear);
-      engine_shift_sound.play(); // play the shift sound
 
       boolean isGoodShift = true; // assume good shift
       int cur_rpm = rpm_sensor.getValue();
@@ -880,21 +646,21 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-    if(haplyBoard.data_available()){
-    widgetOne.device_read_data();
+    // if(haplyBoard.data_available()){
+    // widgetOne.device_read_data();
     
-     angles.set(widgetOne.get_device_angles()); 
-     pos_ee.set(widgetOne.get_device_position(angles.array()));
-     pos_ee.set(mechanism.device_to_graphics(pos_ee));  
+    //  angles.set(widgetOne.get_device_angles()); 
+    //  pos_ee.set(widgetOne.get_device_position(angles.array()));
+    //  pos_ee.set(mechanism.device_to_graphics(pos_ee));  
 
 
-     if(game_state == 1)
-       mechanism.forcerender(pos_ee);
+    //  if(game_state == 1)
+    //    mechanism.forcerender(pos_ee);
 
 
-    }    
-    torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
-    widgetOne.device_write_torques();
+    // }    
+    // torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
+    // widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/
   
     rendering_force = false;
