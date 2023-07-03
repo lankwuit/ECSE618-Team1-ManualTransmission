@@ -153,6 +153,7 @@ PVector           torques                             = new PVector(0, 0);
 /* task space */
 PVector           pos_ee                              = new PVector(0, 0);
 PVector           f_ee                                = new PVector(0, 0); 
+PVector           prev_pos_ee                        = new PVector(0, 0);
 
 
 /* define gear mechanism */
@@ -186,42 +187,36 @@ void setup(){
 
 
    /*************************************************************************/
-  //  haplyBoard          = new Board(this,  "/dev/cu.usbmodem142301", 0);
-  //  widgetOne           = new Device(widgetOneID, haplyBoard);
-  //  pantograph          = new Pantograph();
+   haplyBoard          = new Board(this,  "/dev/cu.usbmodem142401", 0);
+   widgetOne           = new Device(widgetOneID, haplyBoard);
+   pantograph          = new Pantograph();
   
-  //  widgetOne.set_mechanism(pantograph);
+   widgetOne.set_mechanism(pantograph);
   
-  //  ////start: added to fix inverse motion of the ball
-  //  widgetOne.add_actuator(1, CCW, 2);
-  //  widgetOne.add_actuator(2, CW, 1);
+   ////start: added to fix inverse motion of the ball
+   widgetOne.add_actuator(1, CCW, 2);
+   widgetOne.add_actuator(2, CW, 1);
 
-  //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-  //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
+   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+   widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-  //  widgetOne.device_set_parameters();
+  /////////////////
+  // widgetOne.add_actuator(1, CCW, 2);
+  // widgetOne.add_actuator(2, CCW, 1);
+ 
+  // widgetOne.add_encoder(1, CCW, 100, 2048*2.8, 2);
+  // widgetOne.add_encoder(2, CCW, 77, 2048*2.8, 1);
+  ////////////////
+
+  // widgetOne.add_actuator(1, CCW, 2);
+  // widgetOne.add_actuator(2, CCW, 1);
+
+  // widgetOne.add_encoder(1, CW, 100, 2048*2.8, 2);
+  // widgetOne.add_encoder(2, CW, 77, 2048*2.8, 1);
+
+  widgetOne.device_set_parameters();
    /*************************************************************************/
-
-  // // engine sound
-  // engine_rev_sound = new SoundFile(this, "../audio/rev_01.wav");
-  // engine_rev_sound.amp(engine_volume*0.25);
-  // engine_idle_sound = new SoundFile(this, "../audio/engine_idle.wav");
-  // engine_idle_sound.amp(engine_volume);
-
-  // engine_start = new SoundFile(this, "../audio/engine-start.wav");
-  // main_screen_sound = new SoundFile(this, "../audio/main_audio.wav");
-  // main_screen_sound.amp(background_volume*0.5);
-  // start_screen_sound = new SoundFile(this, "../audio/title_audio.wav");
-  // start_screen_sound.amp(background_volume*0.5);
-  // start_screen_sound.loop(); // play the sound while in game_state 0
-
-  // end_screen_sound = new SoundFile(this, "../audio/end_audio.wav");
-  // end_screen_sound.amp(background_volume*10);
-
-  // engine_shift_sound = new SoundFile(this, "../audio/shifting_sfx.wav");
-  // engine_shift_sound.amp(engine_volume);
-
 
   // game text
   target_text = new Meter(game_text_x, game_text_y, rpm_w, rpm_h, METER_TYPE.TEXT);
@@ -371,12 +366,12 @@ void draw(){
     mechanism.draw();
     mechanism.draw_ee(pos_ee.x, pos_ee.y);
 
-    // check the gear
-    GEAR cur_gear = mechanism.getGear(pos_ee);
-    String target_gear_str = gear_seq.get(gear_seq_index);
-    GEAR target_gear = getGearFromString(target_gear_str);
+    // // check the gear
+    // GEAR cur_gear = mechanism.getGear(pos_ee);
+    // String target_gear_str = gear_seq.get(gear_seq_index);
+    // GEAR target_gear = getGearFromString(target_gear_str);
 
-    checkGear(cur_gear);
+    // checkGear(cur_gear);
 
   }else if(rendering_force == false && game_state == 0){ // splash screen
     imageMode(CORNER);
@@ -569,73 +564,73 @@ GEAR getGearFromString(String gear){
 }
 
 
-void checkGear(GEAR cur_gear){
-    if(mechanism.getPrevGear() != cur_gear){ // check if the gear has changed    
-      boolean canChangeGear = shiftGear(cur_gear);
-      boolean targetGearReached = reachedTargetGear(cur_gear);
+// void checkGear(GEAR cur_gear){
+//     if(mechanism.getPrevGear() != cur_gear){ // check if the gear has changed    
+//       boolean canChangeGear = shiftGear(cur_gear);
+//       boolean targetGearReached = reachedTargetGear(cur_gear);
 
-      boolean isGoodShift = true; // assume good shift
-      int cur_rpm = rpm_sensor.getValue();
-      if(cur_rpm < mechanism.getMinRPM(cur_gear) || cur_rpm > mechanism.getMaxRPM(cur_gear)){
-        isGoodShift = false; // outside the rpm range to shift
-      }
+//       boolean isGoodShift = true; // assume good shift
+//       int cur_rpm = rpm_sensor.getValue();
+//       if(cur_rpm < mechanism.getMinRPM(cur_gear) || cur_rpm > mechanism.getMaxRPM(cur_gear)){
+//         isGoodShift = false; // outside the rpm range to shift
+//       }
 
-      if(canChangeGear && isGoodShift && targetGearReached){ // have reached target gear and made a great shift
+//       if(canChangeGear && isGoodShift && targetGearReached){ // have reached target gear and made a great shift
 
-        // reset the highlights
-        this.target_text.highlight(false); // reset the target gear highlight
-        this.clutch.highlight(false); // reset the clutch highlight
-        this.gas.highlight(false); // reset the rpm highlight
+//         // reset the highlights
+//         this.target_text.highlight(false); // reset the target gear highlight
+//         this.clutch.highlight(false); // reset the clutch highlight
+//         this.gas.highlight(false); // reset the rpm highlight
 
 
-        // good shift
-        println("Good shift! Current gear: " + cur_gear);
-        score_text.increaseValue(10); // 10 points for a good shift
-        record_text1.addShiftCount(); // add to the shift count
-        record_text1.increaseValue(10); // add to the shift score
+//         // good shift
+//         println("Good shift! Current gear: " + cur_gear);
+//         score_text.increaseValue(10); // 10 points for a good shift
+//         record_text1.addShiftCount(); // add to the shift count
+//         record_text1.increaseValue(10); // add to the shift score
 
-        // change the target to the next gear
-        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
-        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+//         // change the target to the next gear
+//         gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
+//         target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
 
         
 
-      }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
-        // good shift
-        println("Good shift! Current gear: " + cur_gear);
-        score_text.increaseValue(10); // 10 points for a good shift
-        record_text1.addShiftCount(); // add to the shift count
-        record_text1.increaseValue(10); // add to the shift score
+//       }else if(canChangeGear && isGoodShift && cur_gear == GEAR.NEUTRAL){ // moved into neutral gear
+//         // good shift
+//         println("Good shift! Current gear: " + cur_gear);
+//         score_text.increaseValue(10); // 10 points for a good shift
+//         record_text1.addShiftCount(); // add to the shift count
+//         record_text1.increaseValue(10); // add to the shift score
     
-      }else if(targetGearReached){ // reached target gear but made a bad shift
+//       }else if(targetGearReached){ // reached target gear but made a bad shift
 
-        if(!canChangeGear){
-          println("Bad shift! Clutch not engaged");
-          score_text.decreaseValue(5); // 10 points penalty for a bad shift
-          record_text2.increaseValue(5); // add to the shift score
-          this.clutch.highlight(true); // highlight the clutch since it was not engaged
-        }
-        if(!isGoodShift){
-          println("Bad shift! Wrong RPM: " + cur_rpm);
-          score_text.decreaseValue(5); // 10 points penalty for a bad shift
-          record_text2.increaseValue(5); // add to the shift score
-          this.gas.highlight(true); // highlight the rpm sensor since it was not in the correct range
-        }
+//         if(!canChangeGear){
+//           println("Bad shift! Clutch not engaged");
+//           score_text.decreaseValue(5); // 10 points penalty for a bad shift
+//           record_text2.increaseValue(5); // add to the shift score
+//           this.clutch.highlight(true); // highlight the clutch since it was not engaged
+//         }
+//         if(!isGoodShift){
+//           println("Bad shift! Wrong RPM: " + cur_rpm);
+//           score_text.decreaseValue(5); // 10 points penalty for a bad shift
+//           record_text2.increaseValue(5); // add to the shift score
+//           this.gas.highlight(true); // highlight the rpm sensor since it was not in the correct range
+//         }
 
-        record_text2.addShiftCount(); // add to the shift count
+//         record_text2.addShiftCount(); // add to the shift count
 
-        // change the target to the next gear
-        gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
-        target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
-      }else { // did not reach target gear
-        println("Bad shift! Wrong gear: " + cur_gear);
-        score_text.decreaseValue(10); // 10 points penalty for a bad shift
-        record_text2.addShiftCount(); // add to the shift count
-        record_text2.increaseValue(10); // add to the shift score
-        this.target_text.highlight(true); // highlight the target gear since it was not reached
-      }
-    }
-}
+//         // change the target to the next gear
+//         gear_seq_index = gear_seq_index + 1 >= gear_seq.size() ? 0 : gear_seq_index + 1;
+//         target_text.setValue("GEAR " + gear_seq.get(gear_seq_index));
+//       }else { // did not reach target gear
+//         println("Bad shift! Wrong gear: " + cur_gear);
+//         score_text.decreaseValue(10); // 10 points penalty for a bad shift
+//         record_text2.addShiftCount(); // add to the shift count
+//         record_text2.increaseValue(10); // add to the shift score
+//         this.target_text.highlight(true); // highlight the target gear since it was not reached
+//       }
+//     }
+// }
 
 /* simulation section **************************************************************************************************/
 class SimulationThread implements Runnable{
@@ -646,21 +641,24 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-    // if(haplyBoard.data_available()){
-    // widgetOne.device_read_data();
+    if(haplyBoard.data_available()){
+    widgetOne.device_read_data();
     
-    //  angles.set(widgetOne.get_device_angles()); 
-    //  pos_ee.set(widgetOne.get_device_position(angles.array()));
-    //  pos_ee.set(mechanism.device_to_graphics(pos_ee));  
+     angles.set(widgetOne.get_device_angles()); 
+     pos_ee.set(widgetOne.get_device_position(angles.array()));
+     pos_ee.set(mechanism.device_to_graphics(pos_ee));  
+
+     if(game_state == 1){
+       mechanism.forcerender(pos_ee, prev_pos_ee);
+     }
+
+    // set previous position
+     prev_pos_ee.set(pos_ee);
 
 
-    //  if(game_state == 1)
-    //    mechanism.forcerender(pos_ee);
-
-
-    // }    
-    // torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
-    // widgetOne.device_write_torques();
+    }    
+    torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
+    widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/
   
     rendering_force = false;
