@@ -453,6 +453,60 @@ void keyPressed(){
     }
   }
 
+  if(key == 'r' || key == 'R'){
+    if(game_state == 1){
+      mechanism.resetdevice();
+    }
+  }
+
+  if(key == 'h' || key == 'H'){
+    if(game_state == 1){
+      mechanism.setKd(1.0);
+    }
+  }
+
+  if(key == 'j' || key == 'J'){
+    if(game_state == 1){
+      mechanism.setKd(5.0);
+    }
+  }
+
+  if(key == 'k' || key == 'K'){
+    if(game_state == 1){
+      mechanism.setKd(10.0);
+    }
+  }
+
+  if(key == 'l' || key == 'L'){
+    if(game_state == 1){
+      mechanism.setKd(15.0);
+    }
+  }
+
+  if(key == 'a' || key == 'A'){
+    if(game_state == 1){
+      mechanism.move(1);
+    }
+  }
+
+  if(key == 's' || key == 'S'){
+    if(game_state == 1){
+      mechanism.move(0);
+    }
+  }
+
+  if(key == 'd' || key == 'D'){
+    if(game_state == 1){
+      mechanism.move(2);
+    }
+  }
+
+  if(key == 'w' || key == 'W'){
+    if(game_state == 1){
+      mechanism.move(-1);
+    }
+  }
+
   if(key == 'f' || key == 'F'){
     mechanism.showForce(true);
   }
@@ -462,7 +516,7 @@ void keyPressed(){
 void keyReleased(){
 
   if(key == 'f' || key == 'F'){
-    mechanism.showForce(false);
+    //mechanism.showForce(false);
   }
 }
 
