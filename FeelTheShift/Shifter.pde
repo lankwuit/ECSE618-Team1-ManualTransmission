@@ -6,7 +6,7 @@ enum GEAR{REVERSE, NEUTRAL, ONE, TWO, THREE, FOUR, FIVE}; // types of meters
 public class GearShifter{
 
     int w,h; // width and height of the canvas in pixels
-    float yinitial =0.02214294; //this is in term of meter.
+    float yinitial =0.02214294 + 0.01; //this is in term of meter.
     float slotA_W = 0.1;
     float slotA_h = 0.20;
 
@@ -22,11 +22,11 @@ public class GearShifter{
     
     // ****************************** //
     // Bereket's parameters
-    float kpwall = 800; // Bereket: I need to multiply by 10 to make it work
+    float kpwall = 450; // Bereket: I need to multiply by 10 to make it work
     float kiwall = 200*7;
     float kismooth= 700*7;
-    float kdwall = 5; // 10 is upper thereshold
-    float curvefactor = 800;
+    float kdwall = 0; // 10 is upper thereshold
+    float curvefactor = 0.5*kpwall;
     float neutralRecoveryForce = 50; // Bereket : I need to multiply by 75 to make it work
     // ****************************** //
 
@@ -539,13 +539,13 @@ public class GearShifter{
         //forcePDcompute();
         //PDSmoothing(posEE);
 
-        curve_force = curve_force.add(prev_curve).mult(0.5);
-        System.out.println("curve_force: " + curve_force);
+        //curve_force = curve_force.add(prev_curve).mult(0.5);
+        //System.out.println("curve_force: " + curve_force);
         
         fWall = fWall.add(penWall.mult(-kpwall)).add(velWall.mult(kdwall)).add(curve_force.mult(-curvefactor));  
         //fWall = fWall.add(smoothwall.mult(kismooth));  
         
-        fEE = (fWall.copy()).mult(-1);
+        fEE = (fWall.copy()).mult(-1.0);
         fEE.set(graphics_to_device(fEE));
         /* end haptic wall force calculation */
     }

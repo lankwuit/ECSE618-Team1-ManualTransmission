@@ -187,33 +187,28 @@ void setup(){
 
 
    /*************************************************************************/
-   haplyBoard          = new Board(this,  "/dev/cu.usbmodem142401", 0);
+   haplyBoard          = new Board(this,  Serial.list()[3], 0);
    widgetOne           = new Device(widgetOneID, haplyBoard);
    pantograph          = new Pantograph();
   
    widgetOne.set_mechanism(pantograph);
   
    ////start: added to fix inverse motion of the ball
-   widgetOne.add_actuator(1, CCW, 2);
-   widgetOne.add_actuator(2, CW, 1);
+  //  widgetOne.add_actuator(1, CCW, 2);
+  //  widgetOne.add_actuator(2, CW, 1);
 
-   widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-   widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-  /////////////////
-  // widgetOne.add_actuator(1, CCW, 2);
-  // widgetOne.add_actuator(2, CCW, 1);
+  ///////////////
+  widgetOne.add_actuator(1, CCW, 2);
+  widgetOne.add_actuator(2, CCW, 1);
  
-  // widgetOne.add_encoder(1, CCW, 100, 2048*2.8, 2);
-  // widgetOne.add_encoder(2, CCW, 77, 2048*2.8, 1);
-  ////////////////
+  widgetOne.add_encoder(1, CW, 168, 4880, 2);
+  widgetOne.add_encoder(2, CW, 12, 4880, 1); 
+  //////////////
 
-  // widgetOne.add_actuator(1, CCW, 2);
-  // widgetOne.add_actuator(2, CCW, 1);
-
-  // widgetOne.add_encoder(1, CW, 100, 2048*2.8, 2);
-  // widgetOne.add_encoder(2, CW, 77, 2048*2.8, 1);
 
   widgetOne.device_set_parameters();
    /*************************************************************************/
