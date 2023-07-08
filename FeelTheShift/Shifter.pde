@@ -22,12 +22,12 @@ public class GearShifter{
     
     // ****************************** //
     // Bereket's parameters
-    float kpwall = 450; // Bereket: I need to multiply by 10 to make it work
+    float kpwall = 1500; // Bereket: I need to multiply by 10 to make it work
     float kiwall = 200*7;
     float kismooth= 700*7;
-    float kdwall = 0; // 10 is upper thereshold
-    float curvefactor = 0.5*kpwall;
-    float neutralRecoveryForce = 50; // Bereket : I need to multiply by 75 to make it work
+    float kdwall = 1; // 10 is upper thereshold
+    float curvefactor = kpwall;
+    float neutralRecoveryForce = 100; // Bereket : I need to multiply by 75 to make it work
     // ****************************** //
 
     // ****************************** //
@@ -385,7 +385,12 @@ public class GearShifter{
 
         long timedif = System.nanoTime()-oldtimew; // ns
         oldtimew=System.nanoTime();
-        this.velWall = PVector.sub(posEE, prevPoseEE).div(timedif * 1e-9);
+
+        PVector vel = PVector.sub(posEE, prevPoseEE).div(timedif * 1e-9 + 1e-6); // m/s
+        this.velWall.set(vel);
+
+
+        //this.velWall = PVector.add(PVector.mult(this.velWall,0.9), PVector.mult( (PVector.sub(posEE, prevPoseEE).div(timedif * 1e-9) ), 0.1) ) ;
 
         // * topcord % width ，width pixel posEE ，rEE
         float temp = 0.0, temp2=0.0;
@@ -407,11 +412,9 @@ public class GearShifter{
 
         boolean inTheTopCurve = topCoords[3]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < topCoords[1]*h/scale;
         boolean inTheBottomCurve = bottomCoords[1]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < bottomCoords[3]*h/scale;
-
-        float thereshold = 1.2;
-
+        
         //force feedback for all vertical walls
-        if (topCoords[3]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < topCoords[1]*h/scale){
+        if (/* topCoords[3]*h/scale < posReltoCustomSpace.y */ true && posReltoCustomSpace.y < topCoords[1]*h/scale){  // top curve force
             if(topCoords[0]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < topCoords[8]*w/scale){
                 curve_force = curveforcerender(posReltoCustomSpace,curvecenter[0],curvecenter[1]);
             }else if(topCoords[8]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < topCoords[20]*w/scale){
@@ -423,7 +426,7 @@ public class GearShifter{
             // fWall = fWall.add(velWall.mult(kdwall));  
             // fWall = fWall.add(cumpenWall.mult(-kiwall));
         
-        }else if (bottomCoords[1]*h/scale < posReltoCustomSpace.y  && posReltoCustomSpace.y < bottomCoords[3]*h/scale){
+        }else if (bottomCoords[1]*h/scale < posReltoCustomSpace.y  && true /* posReltoCustomSpace.y < bottomCoords[3]*h/scale */){ // bottom curve force
             if(bottomCoords[0]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < bottomCoords[8]*w/scale){
                 curve_force = curveforcerender(posReltoCustomSpace,curvecenter[6],curvecenter[7]);
             }else if(bottomCoords[8]*w/scale < posReltoCustomSpace.x && posReltoCustomSpace.x < bottomCoords[20]*w/scale){
@@ -434,9 +437,9 @@ public class GearShifter{
         
             // fWall = fWall.add(velWall.mult(kdwall));  
             // fWall = fWall.add(cumpenWall.mult(-kiwall));
-        }if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< topCoords[7]*h/scale){
-            penWall.add(
-                abs(topCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
+        }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< topCoords[7]*h/scale){ // vertical walls top half
+            penWall.add( // why abs?
+                (posReltoCustomSpace.x - topCoords[0]*w/scale )<rEE ? (topCoords[0]*w/scale - (posReltoCustomSpace.x-rEE) ):(
                     abs(topCoords[4]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[4]*w/scale>posReltoCustomSpace.x ? (topCoords[4]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[4]*w/scale-posReltoCustomSpace.x+rEE)):(
                         abs(topCoords[10]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[10]*w/scale>posReltoCustomSpace.x ? (topCoords[10]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[10]*w/scale-posReltoCustomSpace.x+rEE)):(
                             abs(topCoords[16]*w/scale- posReltoCustomSpace.x)<rEE ? (topCoords[16]*w/scale>posReltoCustomSpace.x ? (topCoords[16]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[16]*w/scale-posReltoCustomSpace.x+rEE)):(
@@ -451,53 +454,53 @@ public class GearShifter{
             cumpenWall.set(0,0);
             cumerrorwx=0.0;
             cumerrorwy=0.0;
-        }else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[7]*h/scale){
-            penWall.add(
-                 posReltoCustomSpace.x- topCoords[0]*w/scale<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
-                                    topCoords[28]*w/scale- posReltoCustomSpace.x<rEE ? (topCoords[28]*w/scale>posReltoCustomSpace.x ? (topCoords[28]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[28]*w/scale-posReltoCustomSpace.x+rEE)):0
-                                )
-            ,0);
-            cumpenWall.set(0,0);
-            cumerrorwx=0.0;
-            cumerrorwy=0.0;
-        }else if(bottomCoords[7]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[1]*h/scale){
-            penWall.add(
-                abs(bottomCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[0]*w/scale>posReltoCustomSpace.x ? (bottomCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
-                    abs(bottomCoords[4]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[4]*w/scale>posReltoCustomSpace.x ? (bottomCoords[4]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[4]*w/scale-posReltoCustomSpace.x+rEE)):(
-                        abs(bottomCoords[10]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[10]*w/scale>posReltoCustomSpace.x ? (bottomCoords[10]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[10]*w/scale-posReltoCustomSpace.x+rEE)):(
-                            abs(bottomCoords[16]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[16]*w/scale>posReltoCustomSpace.x ? (topCoords[16]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[16]*w/scale-posReltoCustomSpace.x+rEE)):(
-                                abs(bottomCoords[22]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[22]*w/scale>posReltoCustomSpace.x ? (bottomCoords[22]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[22]*w/scale-posReltoCustomSpace.x+rEE)):(
-                                    abs(bottomCoords[28]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[28]*w/scale>posReltoCustomSpace.x ? (bottomCoords[28]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[28]*w/scale-posReltoCustomSpace.x+rEE)):0
-                                )
-                            )
-                        ) 
-                    )
-                )
-            ,0);     
-            cumpenWall.set(0,0);    
-            cumerrorwx=0.0;
-            cumerrorwy=0.0;   
-        }else{
-            penWall.set(0,0);
-        }
+        }//else if(topCoords[1]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[7]*h/scale){
+        //     penWall.add(
+        //          posReltoCustomSpace.x- topCoords[0]*w/scale<rEE ? (topCoords[0]*w/scale>posReltoCustomSpace.x ? (topCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
+        //                             topCoords[28]*w/scale- posReltoCustomSpace.x<rEE ? (topCoords[28]*w/scale>posReltoCustomSpace.x ? (topCoords[28]*w/scale-posReltoCustomSpace.x-rEE):(topCoords[28]*w/scale-posReltoCustomSpace.x+rEE)):0
+        //                         )
+        //     ,0);
+        //     cumpenWall.set(0,0);
+        //     cumerrorwx=0.0;
+        //     cumerrorwy=0.0;
+        // }else if(bottomCoords[7]*h/scale<=posReltoCustomSpace.y && posReltoCustomSpace.y< bottomCoords[1]*h/scale){
+        //     penWall.add(
+        //         abs(bottomCoords[0]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[0]*w/scale>posReltoCustomSpace.x ? (bottomCoords[0]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[0]*w/scale-posReltoCustomSpace.x+rEE)):(
+        //             abs(bottomCoords[4]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[4]*w/scale>posReltoCustomSpace.x ? (bottomCoords[4]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[4]*w/scale-posReltoCustomSpace.x+rEE)):(
+        //                 abs(bottomCoords[10]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[10]*w/scale>posReltoCustomSpace.x ? (bottomCoords[10]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[10]*w/scale-posReltoCustomSpace.x+rEE)):(
+        //                     abs(bottomCoords[16]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[16]*w/scale>posReltoCustomSpace.x ? (topCoords[16]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[16]*w/scale-posReltoCustomSpace.x+rEE)):(
+        //                         abs(bottomCoords[22]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[22]*w/scale>posReltoCustomSpace.x ? (bottomCoords[22]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[22]*w/scale-posReltoCustomSpace.x+rEE)):(
+        //                             abs(bottomCoords[28]*w/scale- posReltoCustomSpace.x)<rEE ? (bottomCoords[28]*w/scale>posReltoCustomSpace.x ? (bottomCoords[28]*w/scale-posReltoCustomSpace.x-rEE):(bottomCoords[28]*w/scale-posReltoCustomSpace.x+rEE)):0
+        //                         )
+        //                     )
+        //                 ) 
+        //             )
+        //         )
+        //     ,0);     
+        //     cumpenWall.set(0,0);    
+        //     cumerrorwx=0.0;
+        //     cumerrorwy=0.0;   
+        // }else{
+        //     penWall.set(0,0);
+        // }
         
         
         temp = penWall.x;
         
         //for DEF, JKL etc, including clutch interactions
-        if(topCoords[6]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[10]*w/scale){
-            penWall.add(0,
-                abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale>posReltoCustomSpace.y ? (topCoords[7]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[7]*h/scale-posReltoCustomSpace.y+rEE)):(
-                    abs(bottomCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[7]*h/scale>posReltoCustomSpace.y ? (bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE)):0
-                )
-            );
-        }else if(topCoords[18]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[22]*w/scale){
-            penWall.add(0,
-                abs(topCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[19]*h/scale>posReltoCustomSpace.y ? (topCoords[19]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[19]*h/scale-posReltoCustomSpace.y+rEE)):(
-                    abs(bottomCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[19]*h/scale>posReltoCustomSpace.y ? (bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE)):0
-                )
-            );
-        }
+        // if(topCoords[6]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[10]*w/scale){
+        //     penWall.add(0,
+        //         abs(topCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[7]*h/scale>posReltoCustomSpace.y ? (topCoords[7]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[7]*h/scale-posReltoCustomSpace.y+rEE)):(
+        //             abs(bottomCoords[7]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[7]*h/scale>posReltoCustomSpace.y ? (bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[7]*h/scale-posReltoCustomSpace.y-rEE)):0
+        //         )
+        //     );
+        // }else if(topCoords[18]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[22]*w/scale){
+        //     penWall.add(0,
+        //         abs(topCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (topCoords[19]*h/scale>posReltoCustomSpace.y ? (topCoords[19]*h/scale-posReltoCustomSpace.y+rEE):(topCoords[19]*h/scale-posReltoCustomSpace.y+rEE)):(
+        //             abs(bottomCoords[19]*h/scale- posReltoCustomSpace.y)<rEE ? (bottomCoords[19]*h/scale>posReltoCustomSpace.y ? (bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE):(bottomCoords[19]*h/scale-posReltoCustomSpace.y-rEE)):0
+        //         )
+        //     );
+        // }
 
         if(!clutch){
             if(topCoords[0]*w/scale<=posReltoCustomSpace.x && posReltoCustomSpace.x<= topCoords[4]*w/scale){

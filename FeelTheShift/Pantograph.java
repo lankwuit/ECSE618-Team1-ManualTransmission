@@ -33,7 +33,7 @@ public class Pantograph extends Mechanisms{
 	
     this.l = 0.07f;
     this.L = 0.09f;
-    this.d = 0.0f;	
+    this.d = 0.038f;	
   }
 	
 	
