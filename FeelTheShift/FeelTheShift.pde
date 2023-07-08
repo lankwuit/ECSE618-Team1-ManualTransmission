@@ -187,30 +187,30 @@ void setup(){
 
 
    /*************************************************************************/
-  //  haplyBoard          = new Board(this,  Serial.list()[3], 0);
-  //  widgetOne           = new Device(widgetOneID, haplyBoard);
-  //  pantograph          = new Pantograph();
+   haplyBoard          = new Board(this,  Serial.list()[3], 0);
+   widgetOne           = new Device(widgetOneID, haplyBoard);
+   pantograph          = new Pantograph();
   
-  //  widgetOne.set_mechanism(pantograph);
+   widgetOne.set_mechanism(pantograph);
   
-  //  ////start: added to fix inverse motion of the ball
-  // //  widgetOne.add_actuator(1, CCW, 2);
-  // //  widgetOne.add_actuator(2, CW, 1);
+   ////start: added to fix inverse motion of the ball
+  //  widgetOne.add_actuator(1, CCW, 2);
+  //  widgetOne.add_actuator(2, CW, 1);
 
-  // //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-  // //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
+  //  widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+  //  widgetOne.add_encoder(2, CW, -61, 10752, 1);
   
 
-  // ///////////////
-  // widgetOne.add_actuator(1, CCW, 2);
-  // widgetOne.add_actuator(2, CCW, 1);
+  ///////////////
+  widgetOne.add_actuator(1, CCW, 2);
+  widgetOne.add_actuator(2, CCW, 1);
  
-  // widgetOne.add_encoder(1, CW, 168, 4880, 2);
-  // widgetOne.add_encoder(2, CW, 12, 4880, 1); 
-  // //////////////
+  widgetOne.add_encoder(1, CCW, 168, 4880, 2);
+  widgetOne.add_encoder(2, CCW, 12, 4880, 1); 
+  //////////////
 
 
-  // widgetOne.device_set_parameters();
+  widgetOne.device_set_parameters();
    /*************************************************************************/
 
   // game text
@@ -676,13 +676,13 @@ void checkGear(GEAR cur_gear){
           println("Bad shift! Clutch not engaged");
           score_text.decreaseValue(5); // 10 points penalty for a bad shift
           record_text2.increaseValue(5); // add to the shift score
-          this.clutch.highlight(true); // highlight the clutch since it was not engaged
+          //this.clutch.highlight(true); // highlight the clutch since it was not engaged
         }
         if(!isGoodShift){
-          println("Bad shift! Wrong RPM: " + cur_rpm);
-          score_text.decreaseValue(5); // 10 points penalty for a bad shift
-          record_text2.increaseValue(5); // add to the shift score
-          this.gas.highlight(true); // highlight the rpm sensor since it was not in the correct range
+          //println("Bad shift! Wrong RPM: " + cur_rpm);
+          //score_text.decreaseValue(5); // 10 points penalty for a bad shift
+          //record_text2.increaseValue(5); // add to the shift score
+          //this.gas.highlight(true); // highlight the rpm sensor since it was not in the correct range
         }
 
         record_text2.addShiftCount(); // add to the shift count
@@ -709,24 +709,24 @@ class SimulationThread implements Runnable{
     rendering_force = true;
     
     /***************** HAPTIC SIMULATION *****************/
-    // if(haplyBoard.data_available()){
-    // widgetOne.device_read_data();
+    if(haplyBoard.data_available()){
+    widgetOne.device_read_data();
     
-    //  angles.set(widgetOne.get_device_angles()); 
-    //  pos_ee.set(widgetOne.get_device_position(angles.array()));
-    //  pos_ee.set(mechanism.device_to_graphics(pos_ee));  
+     angles.set(widgetOne.get_device_angles()); 
+     pos_ee.set(widgetOne.get_device_position(angles.array()));
+     pos_ee.set(mechanism.device_to_graphics(pos_ee));  
 
-    //  if(game_state == 1){
-    //    mechanism.forcerender(pos_ee, prev_pos_ee);
-    //  }
+     if(game_state == 1){
+       mechanism.forcerender(pos_ee, prev_pos_ee);
+     }
 
-    // // set previous position
-    //  prev_pos_ee.set(pos_ee);
+    // set previous position
+     prev_pos_ee.set(pos_ee);
 
 
-    // }    
-    // torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
-    // widgetOne.device_write_torques();
+    }    
+    torques.set(widgetOne.set_device_torques(mechanism.fEE.array()));
+    widgetOne.device_write_torques();
     /***************** END HAPTIC SIMULATION *****************/
   
     rendering_force = false;
