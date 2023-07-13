@@ -22,7 +22,7 @@ public class GearShifter{
     
     // ****************************** //
     // Bereket's parameters
-    float kpwall = 400;
+    float kpwall = 600;
     // float kiwall = 200*7;
     // float kismooth= 700*7;
     float kdwall = 1; // 10 is upper thereshold
@@ -346,7 +346,7 @@ public class GearShifter{
         PVector temp = new PVector(centerx*w/scale,centery*h/scale);
         float distance = PVector.dist(posReltoCustomSpace,temp);
         float penamount = rEE - curveREEallowance + distance; //- slotA_W * w / scale;
-        System.out.println("penamount: " + penamount);
+       
        //if(PVector.dist(posReltoCustomSpace,temp)<rEE){ // see if this is the right curve that is near the right ee
             PVector angle=PVector.sub(posReltoCustomSpace,temp); // for angle calculation (temp -> posReltoCustomSpace)
 

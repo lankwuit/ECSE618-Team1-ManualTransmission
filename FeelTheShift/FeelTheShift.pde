@@ -474,25 +474,25 @@ void keyPressed(){
 
   if(key == 'h' || key == 'H'){
     if(game_state == 1){
-      mechanism.setKd(1.0);
+      mechanism.setKd(0.5);
     }
   }
 
   if(key == 'j' || key == 'J'){
     if(game_state == 1){
-      mechanism.setKd(5.0);
+      mechanism.setKd(1.0);
     }
   }
 
   if(key == 'k' || key == 'K'){
     if(game_state == 1){
-      mechanism.setKd(10.0);
+      mechanism.setKd(1.5);
     }
   }
 
   if(key == 'l' || key == 'L'){
     if(game_state == 1){
-      mechanism.setKd(15.0);
+      mechanism.setKd(2.0);
     }
   }
 
